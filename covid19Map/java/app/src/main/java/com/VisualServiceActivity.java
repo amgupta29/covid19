@@ -1,24 +1,11 @@
-package com;/*
- * Copyright (C) 2012 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -32,31 +19,30 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.domainObjects.DataObject;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.gson.Gson;
-import com.google.maps.android.heatmaps.Gradient;
-import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.domainObjects.DataObject;
-import com.domainObjects.Symptom;
-
-/**
- * This demonstrates how to add a tile overlay to a map.
- */
 public class VisualServiceActivity extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener,
@@ -66,24 +52,26 @@ public class VisualServiceActivity extends AppCompatActivity
     private FusedLocationProviderClient fusedLocationClient;
     private GoogleMap mMap;
     private Location mLocation;
-    private RadioButton mCovid;
-    private RadioButton mFlu;
-    private RadioButton mNormal;
-    private Button mUpdate;
+    private RadioButton mCovid19;
+    private RadioButton mSymptom;
     private CheckBox mCough;
     private CheckBox mFever;
     private CheckBox mSoreThroat;
+    private CheckBox mBreathless;
+    private CheckBox mChestPain;
+    private CheckBox mWeakness;
     private CheckBox mDiahorrea;
+    private Button mUpdate;
+    private Button mHealthy;
+    private static Context mContext;
+    private String url ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
 
-    /**
-     * Flag indicating whether a requested permission has been denied after returning in
-     * {@link #onRequestPermissionsResult(int, String[], int[])}.
-     */
-    private boolean mPermissionDenied = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mContext = getApplicationContext();
+
         setContentView(R.layout.syptoms_heatmap);
 
         SupportMapFragment mapFragment =
@@ -95,31 +83,45 @@ public class VisualServiceActivity extends AppCompatActivity
         RadioGroup lRadioGroup = (RadioGroup) findViewById(R.id.radioLevels);
         lRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged (RadioGroup group,int checkedId) {
-                if (checkedId == R.id.flu) {
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if (checkedId == R.id.symptoms) {
                     LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
                     lInputCheckBoxPanel.setVisibility(View.VISIBLE);
-                    mCough = (CheckBox) findViewById(R.id.cough);
-                    mFever = (CheckBox) findViewById(R.id.fever);
-                    mFlu = (RadioButton) findViewById(R.id.flu);
-                    mSoreThroat = (CheckBox) findViewById(R.id.soreThroat);
-                    mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
+                    mSymptom = (RadioButton) findViewById(R.id.symptoms);
+
                 } else if (checkedId == R.id.covid19) {
-                    mCovid = (RadioButton) findViewById(R.id.covid19);
-                    LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
-                    lInputCheckBoxPanel.setVisibility(View.GONE);
-                } else {
-                    mNormal = (RadioButton) findViewById(R.id.normal);
+                    mCovid19 = (RadioButton) findViewById(R.id.covid19);
+                    mCovid19.setSelected(true);
                     LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
                     lInputCheckBoxPanel.setVisibility(View.GONE);
                 }
             }
         });
 
+        final GenerateHeatMap generateHeatMap = new GenerateHeatMap();
+
+        mHealthy = (Button) findViewById(R.id.healthy);
+        mHealthy.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    generateHeatMap.addHeatMap(mMap);
+                } catch (JSONException e) {
+                    Log.d("MAP_PARSING", "Json parsing expection for rendering map");
+                    //Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show();
+                }
+                LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
+                lInputPanel.setVisibility(View.INVISIBLE);
+            }
+        });
         mUpdate = (Button) findViewById(R.id.update);
         mUpdate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                addHeatMap();
+                try {
+                    generateHeatMap.addHeatMap(mMap);
+                } catch (JSONException e) {
+                    Log.d("MAP_PARSING", "Json parsing expection for rendering map");
+                    //Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show();
+                }
 
                 LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
                 lInputPanel.setVisibility(View.INVISIBLE);
@@ -129,53 +131,142 @@ public class VisualServiceActivity extends AppCompatActivity
         });
     }
 
-    private void prepareOutboundData() {
-        DataObject dataObject = new DataObject();
-        dataObject.setLocation(new LatLng(mLocation.getLatitude(),  mLocation.getLongitude()));
-        dataObject.setTimestamp(System.currentTimeMillis());
-        if(mCovid != null) {
-            dataObject.setCovid(mCovid.getText().toString());
+    public void onCheckboxClicked(View view) {
+        boolean checked = ((CheckBox) view).isChecked();
+        switch (view.getId()) {
+            case R.id.cough:
+                if (checked) {
+                    mCough = (CheckBox) findViewById(R.id.cough);
+                    mCough.setChecked(true);
+                }
+                break;
+            case R.id.fever:
+                if (checked) {
+                    mFever = (CheckBox) findViewById(R.id.fever);
+                    mFever.setChecked(true);
+                }
+                break;
+            case R.id.soreThroat:
+                if (checked) {
+                    mSoreThroat = (CheckBox) findViewById(R.id.soreThroat);
+                    mSoreThroat.setChecked(true);
+                }
+                break;
+            case R.id.breathless:
+                if (checked) {
+                    mBreathless = (CheckBox) findViewById(R.id.breathless);
+                    mBreathless.setChecked(true);
+                }
+                break;
+            case R.id.chestPain:
+                if (checked) {
+                    mChestPain = (CheckBox) findViewById(R.id.chestPain);
+                    mChestPain.setChecked(true);
+                }
+                break;
+            case R.id.severeWeakness:
+                if (checked) {
+                    mWeakness = (CheckBox) findViewById(R.id.severeWeakness);
+                    mWeakness.setChecked(true);
+                }
+                break;
+            case R.id.diahorrea:
+                if (checked) {
+                    mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
+                    mDiahorrea.setChecked(true);
+                }
+                break;
         }
-        if(mNormal != null) {
-            dataObject.setHealthy(mNormal.getText().toString());
-        }
-
-        if(mFlu != null) {
-            Symptom flu = new Symptom();
-            if(mCough != null) {
-                flu.setCough(mCough.getText().toString());
-            }
-            if(mFever != null) {
-                flu.setFever(mFever.getText().toString());
-            }
-            if(mSoreThroat != null) {
-                flu.setSoreThroat(mSoreThroat.getText().toString());
-            }
-            if(mDiahorrea != null) {
-                flu.setDiahorrea(mDiahorrea.getText().toString());
-            }
-
-            dataObject.setFlu(flu);
-        }
-
-        prepareJson(dataObject);
     }
 
-    private void prepareJson(DataObject dataObject) {
+    private void prepareOutboundData() {
+        DataObject dataObject = new DataObject();
+
+        List<String>  symtompsList = new ArrayList<>();
+        List<String>  diagnosesList = new ArrayList<>();
+
+        dataObject.setId(Utils.id(mContext));
+        dataObject.setLocation(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()));
+        dataObject.setTimestamp(System.currentTimeMillis());
+
+        if (mCovid19 != null && mCovid19.isSelected()) {
+            diagnosesList.add(mCovid19.getText().toString());
+        }
+
+        if (mSymptom != null && mSymptom.isChecked()) {
+            diagnosesList.add(mSymptom.getText().toString());
+
+            if (mCough != null && mCough.isChecked()) {
+                symtompsList.add(mCough.getText().toString());
+            }
+            if (mFever != null && mFever.isChecked()) {
+                symtompsList.add(mFever.getText().toString());
+            }
+            if (mSoreThroat != null && mSoreThroat.isChecked()) {
+                symtompsList.add(mSoreThroat.getText().toString());
+            }
+            if (mBreathless != null && mBreathless.isChecked()) {
+                symtompsList.add(mBreathless.getText().toString());
+            }
+            if (mChestPain != null && mChestPain.isChecked()) {
+                symtompsList.add(mChestPain.getText().toString());
+            }
+            if (mWeakness != null && mWeakness.isChecked()) {
+                symtompsList.add(mWeakness.getText().toString());
+            }
+            if (mDiahorrea != null && mDiahorrea.isChecked()) {
+                symtompsList.add(mDiahorrea.getText().toString());
+            }
+
+        }
+
+        dataObject.setSymptoms(symtompsList);
+        dataObject.setDiagnoses(diagnosesList);
+        sendRequst(dataObject);
+    }
+
+    private void sendRequst(DataObject dataObject) {
         Gson gson = new Gson();
         String outBoundMessage = gson.toJson(dataObject);
 
-        System.out.println(outBoundMessage);
+        Log.d("REQUEST_OBJECT", outBoundMessage);
 
-        //Todo: Send the data to the server
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        JSONObject postparams=null;
+        try {
+            postparams = new JSONObject(outBoundMessage);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        // Request a string response from the provided URL.
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST,
+                url, postparams,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // Display the first 500 characters of the response string.
+                        Log.d("POST", response.toString());
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                error.printStackTrace(pw);
+                Log.e("POST_ERROR", sw.toString());
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        queue.add(jsonObjReq);
     }
 
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-
-        //addHeatMap();
 
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMyLocationClickListener(this);
@@ -227,71 +318,12 @@ public class VisualServiceActivity extends AppCompatActivity
             // Permission was denied. Display an error message
             // [START_EXCLUDE]
             // Display the missing permission error dialog when the fragments resume.
-            mPermissionDenied = true;
+            //mPermissionDenied = true;
             // [END_EXCLUDE]
         }
     }
     // [END maps_check_location_permission_result]
 
-
-    private void addHeatMap() {
-        //TODO: Load the data from the server
-        List<LatLng> fluList = null;
-        List<LatLng> covidList = null;
-
-        try {
-            covidList = readCovidItems();
-            fluList = readFluItems();
-        } catch (JSONException e) {
-            Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show();
-        }
-
-        Gradient covidGradient = new Gradient(covidColors, startPoints);
-        Gradient fluGradient = new Gradient(fluColors, startPoints);
-
-        HeatmapTileProvider covidProvider = new HeatmapTileProvider.Builder()
-                .data(covidList).gradient(covidGradient).radius(50)
-                .build();
-        HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
-                .data(fluList).gradient(fluGradient).radius(25)
-                .build();
-        // Add a tile overlay to the map, using the heat map tile provider.
-        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(covidProvider));
-        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
-    }
-
-    // Create the gradient.
-    int[] covidColors = {
-            Color.rgb(102, 225, 0), // green
-            Color.rgb(255, 0, 0)    // red
-    };
-
-    int[] fluColors = {
-            Color.rgb(102, 225, 0), // green
-            Color.rgb(255, 225, 0)    // red
-    };
-
-    float[] startPoints = {
-            0.2f, 1f
-    };
-
-    @Override
-    protected void onResumeFragments() {
-        super.onResumeFragments();
-        if (mPermissionDenied) {
-            // Permission was not granted, display error dialog.
-            showMissingPermissionError();
-            mPermissionDenied = false;
-        }
-    }
-
-    /**
-     * Displays a dialog with error message explaining that the location permission is missing.
-     */
-    private void showMissingPermissionError() {
-        PermissionUtils.PermissionDeniedDialog
-                .newInstance(true).show(getSupportFragmentManager(), "dialog");
-    }
 
     @Override
     public boolean onMyLocationButtonClick() {
@@ -303,77 +335,6 @@ public class VisualServiceActivity extends AppCompatActivity
 
     @Override
     public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location.getLatitude()+", "+location.getLongitude()+",\nTimestamp: "+location.getTime(), Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * Test data
-     */
-    private ArrayList<LatLng> readCovidItems() throws JSONException {
-        ArrayList<LatLng> list = new ArrayList<>();
-        String json = "[\n" +
-                "   {\n" +
-                "      \"lat\":57.708870,\n" +
-                "      \"lng\":11.974560\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708860,\n" +
-                "      \"lng\":11.974560\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708870,\n" +
-                "      \"lng\":11.974550\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708840,\n" +
-                "      \"lng\":11.974560\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708870,\n" +
-                "      \"lng\":11.974540\n" +
-                "   }\n" +
-                "]";
-        JSONArray array = new JSONArray(json);
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject object = array.getJSONObject(i);
-            double lat = object.getDouble("lat");
-            double lng = object.getDouble("lng");
-            list.add(new LatLng(lat, lng));
-        }
-        return list;
-    }
-
-    private ArrayList<LatLng> readFluItems() throws JSONException {
-        ArrayList<LatLng> list = new ArrayList<>();
-        String json = "[\n" +
-                "   {\n" +
-                "      \"lat\":57.708870,\n" +
-                "      \"lng\":11.975560\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708860,\n" +
-                "      \"lng\":11.974660\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708870,\n" +
-                "      \"lng\":11.974750\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708840,\n" +
-                "      \"lng\":11.978560\n" +
-                "   },\n" +
-                "   {\n" +
-                "       \"lat\":57.708870,\n" +
-                "      \"lng\":11.979540\n" +
-                "   }\n" +
-                "]";
-        JSONArray array = new JSONArray(json);
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject object = array.getJSONObject(i);
-            double lat = object.getDouble("lat");
-            double lng = object.getDouble("lng");
-            list.add(new LatLng(lat, lng));
-        }
-        return list;
+        Toast.makeText(this, "Current location:\n" + location.getLatitude() + ", " + location.getLongitude() + ",\nTimestamp: " + location.getTime(), Toast.LENGTH_LONG).show();
     }
 }

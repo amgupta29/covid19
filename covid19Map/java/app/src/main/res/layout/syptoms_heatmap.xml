@@ -48,18 +48,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical">
-            <RadioButton
+            <!--<RadioButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:text="@string/normal"
-                android:id="@+id/normal"/>
+                android:id="@+id/normal"/>-->
             <RadioButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:text="@string/flu"
-                android:id="@+id/flu"/>
+                android:text="@string/symptoms"
+                android:id="@+id/symptoms"/>
 
             <LinearLayout
                 android:id="@+id/inputCheckbox"
@@ -72,25 +72,50 @@
                     android:id="@+id/cough"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Coughing">
+                    android:text="Moderate to severe cough"
+                    android:onClick="onCheckboxClicked">
                 </CheckBox>
                 <CheckBox
                     android:id="@+id/fever"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fever">
+                    android:text="High fever"
+                    android:onClick="onCheckboxClicked">
                 </CheckBox>
                 <CheckBox
                     android:id="@+id/soreThroat"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sore throat">
+                    android:text="Sore throat"
+                    android:onClick="onCheckboxClicked">
+                </CheckBox>
+                <CheckBox
+                    android:id="@+id/breathless"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Feeling breathless"
+                    android:onClick="onCheckboxClicked">
+                </CheckBox>
+                <CheckBox
+                    android:id="@+id/chestPain"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Persistent pain or pressure in chest"
+                    android:onClick="onCheckboxClicked">
+                </CheckBox>
+                <CheckBox
+                    android:id="@+id/severeWeakness"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Severe weakness"
+                    android:onClick="onCheckboxClicked">
                 </CheckBox>
                 <CheckBox
                     android:id="@+id/diahorrea"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Diahorrea">
+                    android:text="Diahorrea"
+                    android:onClick="onCheckboxClicked">
                 </CheckBox>
             </LinearLayout>
             <RadioButton
@@ -107,6 +132,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:text="@string/common_google_play_services_update_button"/>
+
+        <Button
+            android:id="@+id/healthy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="@string/healthy"/>
 
     </LinearLayout>
 </RelativeLayout>

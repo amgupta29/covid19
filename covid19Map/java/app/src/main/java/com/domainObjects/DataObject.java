@@ -1,16 +1,25 @@
 package com.domainObjects;
 
-import android.location.Location;
-
 import com.google.android.gms.maps.model.LatLng;
+
+import java.util.List;
 
 
 public class DataObject {
-    String covid;
-    String healthy;
-    Symptom flu;
+
+    String id;
+    List<String> symptoms;
+    List<String> diagnoses;
     long timestamp;
     LatLng location;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTimestamp() {
         return timestamp;
@@ -28,27 +37,15 @@ public class DataObject {
         this.location = location;
     }
 
-    public String getCovid() {
-        return covid;
+    public void setSymptoms(List<String> symptoms) {
+        this.symptoms = symptoms;
     }
 
-    public void setCovid(String covid) {
-        this.covid = covid;
+    public List<String> getDiagnoses() {
+        return diagnoses;
     }
 
-    public String getHealthy() {
-        return healthy;
-    }
-
-    public void setHealthy(String healthy) {
-        this.healthy = healthy;
-    }
-
-    public Symptom getFlu() {
-        return flu;
-    }
-
-    public void setFlu(Symptom flu) {
-        this.flu = flu;
+    public void setDiagnoses(List<String> diagnoses) {
+        this.diagnoses = diagnoses;
     }
 }

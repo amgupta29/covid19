@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <resources>
-    <string name="demo_title">Google Maps API Demos</string>
+    <string name="title">COVID19/flu map</string>
     <string name="no_demos">No demos</string>
     <string name="play_services_not_installed">Google Play services is not installed on this device.</string>
 
@@ -239,9 +239,10 @@
     <string name="location_permission_denied">This sample requires location permission to enable the \'my location\' layer. Please try again and grant access to use the location.\nIf the permission has been permanently denied, it can be enabled from the System Settings &gt; Apps &gt; \'Google Maps API Demos\'.</string>
     <string name="permission_required_toast">Location permission is required for this demo.</string>
     <string name="level" />
-    <string name="flu">Flu</string>
+    <string name="symptoms">Flu Symptoms</string>
     <string name="covid19">Tested positive for COVID19</string>
     <string name="question">How are you feeling buddy ?</string>
     <string name="questionlabel">hi</string>
+    <string name="healthy">Feeling perfectly fine!</string>
 
 </resources>
