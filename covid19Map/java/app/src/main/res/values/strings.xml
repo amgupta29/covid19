@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <resources>
-    <string name="title">COVID19/flu map</string>
+    <string name="title">COVID19 map</string>
     <string name="no_demos">No demos</string>
     <string name="play_services_not_installed">Google Play services is not installed on this device.</string>
 
@@ -244,5 +244,6 @@
     <string name="question">How are you feeling buddy ?</string>
     <string name="questionlabel">hi</string>
     <string name="healthy">Feeling perfectly fine!</string>
+    <string name="backButton">Go back</string>
 
 </resources>

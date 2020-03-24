@@ -19,10 +19,12 @@ import com.domainObjects.ResponseMapDataObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.gson.Gson;
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
+import com.google.maps.android.heatmaps.WeightedLatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,6 +39,8 @@ import java.util.List;
 public class GenerateHeatMap {
 
     private String url ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
+    public TileOverlay covid19TileOverlay;
+    public TileOverlay fluTileOverlay;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void addHeatMap(GoogleMap pMap, JSONObject mapData) {
@@ -51,17 +55,22 @@ public class GenerateHeatMap {
             Log.e("MAP_DATA_EXCEPTION", sw.toString());
         }
 
-        List<LatLng> fluList = new ArrayList<>();
-        List<LatLng> covid19List = new ArrayList<>();
+        List<WeightedLatLng> fluList = new ArrayList<>();
+        List<WeightedLatLng> covid19List = new ArrayList<>();
+
         List<OperationResponse> operationResponseList = responseMapDataObject.getOperationResponse();
         for (OperationResponse operationResponseListObj:
         operationResponseList) {
             LatLng latLng = new LatLng(operationResponseListObj.getValue().getLatitude(), operationResponseListObj.getValue().getLongitude());
+            WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
+
             if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
-                covid19List.add(latLng);
+                //covid19List.add(latLng);
+                covid19List.add(weightedLatLng);
                 Log.e("COVID19_DATA", fluList.toString());
             } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
-                fluList.add(latLng);
+//              fluList.add(latLng);
+                fluList.add(weightedLatLng);
                 Log.e("FLU_DATA", fluList.toString());
 
             }
@@ -73,32 +82,43 @@ public class GenerateHeatMap {
 
         if(!covid19List.isEmpty()) {
             HeatmapTileProvider covid19Provider = new HeatmapTileProvider.Builder()
-                    .data(covid19List).gradient(covid19Gradient).radius(50)
+                    .weightedData(covid19List).gradient(covid19Gradient).radius(50).opacity(1).maxIntensity(10)
                     .build();
             // Add a tile overlay to the map, using the heat map tile provider.
-            pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
+            covid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
         }
         if(!fluList.isEmpty()) {
             HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
-                    .data(fluList).gradient(fluGradient).radius(50)
+                    .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
                     .build();
-            pMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
+            fluTileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
         }
     }
 
     // Create the gradient.
     int[] covid19Colors = {
-            Color.rgb(102, 225, 0), // green
+            Color.rgb(79, 195, 247), // blue
+            //Color.rgb(255, 235, 59), // yellow
+            //Color.rgb(255, 152, 0), // orange
+            Color.rgb(255, 152, 0), // orange
+            //Color.rgb(255, 0, 0),   // red
+            Color.rgb(255, 0, 0), // red
             Color.rgb(255, 0, 0)    // red
     };
 
     int[] fluColors = {
-            Color.rgb(102, 225, 0), // green
-            Color.rgb(255, 225, 0)    // red
+            //Color.rgb(225, 215, 0), // green
+            //Color.rgb(255, 140, 0)    // orange
+            Color.rgb(79, 195, 247), // blue
+            Color.rgb(255, 235, 59), // yellow
+            //Color.rgb(255, 152, 0), // orange
+            Color.rgb(255, 152, 0), // orange
+            Color.rgb(255, 152, 0), //orange
+            // Color.rgb(244, 100, 54)    // red
     };
 
     float[] startPoints = {
-            0.2f, 1f
+            0.2f, 0.8f, 0.9f, 1.0f
     };
 
     public void sendRequest(GoogleMap mMap, RequestDataObject requestDataObject, Context context) {

@@ -22,10 +22,8 @@ import androidx.core.content.ContextCompat;
 
 import com.domainObjects.RequestDataObject;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -64,32 +62,28 @@ public class VisualServiceActivity extends AppCompatActivity
     private Button mUpdate;
     private Button mHealthy;
     private static Context mContext;
+    private GenerateHeatMap mGenerateHeatMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         mContext = getApplicationContext();
-
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        mSettingsClient = LocationServices.getSettingsClient(this);
-
         setContentView(R.layout.syptoms_heatmap);
 
-        mFusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        // Got last known location. In some rare situations this can be null.
-                        if (location != null) {
-                            mCurrentLocation = mLocation = location;
-                        }
-                    }
-                });
+        mGenerateHeatMap = new GenerateHeatMap();
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        locationInitialisation();
+
+        UIInitialiasation();
+
+    }
+
+    private void UIInitialiasation() {
         RadioGroup lRadioGroup = (RadioGroup) findViewById(R.id.radioLevels);
         lRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -113,8 +107,10 @@ public class VisualServiceActivity extends AppCompatActivity
             public void onClick(View v) {
                 LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
                 lInputPanel.setVisibility(View.INVISIBLE);
+                LinearLayout lBackBoxPanel = (LinearLayout) findViewById(R.id.backButtonPanel);
+                lBackBoxPanel.setVisibility(View.VISIBLE);
 
-                new GenerateHeatMap().getMapData(mMap, mContext);
+                mGenerateHeatMap.getMapData(mMap, mContext);
             }
         });
         mUpdate = (Button) findViewById(R.id.update);
@@ -122,11 +118,68 @@ public class VisualServiceActivity extends AppCompatActivity
             public void onClick(View v) {
                 LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
                 lInputPanel.setVisibility(View.INVISIBLE);
+                LinearLayout lBackBoxPanel = (LinearLayout) findViewById(R.id.backButtonPanel);
+                lBackBoxPanel.setVisibility(View.VISIBLE);
 
                 prepareOutboundData();
             }
         });
+        Button backButton = (Button) findViewById(R.id.backButton);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
+                lInputPanel.setVisibility(View.VISIBLE);
+                LinearLayout lBackBoxPanel = (LinearLayout) findViewById(R.id.backButtonPanel);
+                lBackBoxPanel.setVisibility(View.INVISIBLE);
 
+                resetUI();
+            }
+        });
+    }
+
+    private void resetUI() {
+        mSymptom = (RadioButton) findViewById(R.id.symptoms);
+        mSymptom.setSelected(false);
+
+        mCough = (CheckBox) findViewById(R.id.cough);
+        mCough.setChecked(false);
+        mFever = (CheckBox) findViewById(R.id.fever);
+        mFever.setChecked(false);
+        mSoreThroat = (CheckBox) findViewById(R.id.soreThroat);
+        mSoreThroat.setChecked(false);
+        mBreathless = (CheckBox) findViewById(R.id.breathless);
+        mBreathless.setChecked(false);
+        mBreathless = (CheckBox) findViewById(R.id.breathless);
+        mBreathless.setChecked(false);
+        mChestPain = (CheckBox) findViewById(R.id.chestPain);
+        mChestPain.setChecked(false);
+        mWeakness = (CheckBox) findViewById(R.id.severeWeakness);
+        mWeakness.setChecked(false);
+        mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
+        mDiahorrea.setChecked(false);
+
+        mCovid19 = (RadioButton) findViewById(R.id.covid19);
+        mCovid19.setSelected(false);
+
+        //reset map overlay
+        mGenerateHeatMap.covid19TileOverlay.remove();
+        mGenerateHeatMap.fluTileOverlay.remove();
+    }
+
+    private void locationInitialisation() {
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mSettingsClient = LocationServices.getSettingsClient(this);
+
+        mFusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            mCurrentLocation = mLocation = location;
+                        }
+                    }
+                });
     }
 
     @Override
@@ -247,6 +300,7 @@ public class VisualServiceActivity extends AppCompatActivity
     public void onMapReady(GoogleMap map) {
         mMap = map;
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
 
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMyLocationClickListener(this);
