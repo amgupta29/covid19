@@ -5,7 +5,7 @@ import com.google.android.gms.maps.model.LatLng;
 import java.util.List;
 
 
-public class DataObject {
+public class RequestDataObject {
 
     String id;
     List<String> symptoms;

@@ -1,7 +1,9 @@
 package com;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -16,40 +18,38 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import com.domainObjects.DataObject;
+import com.domainObjects.RequestDataObject;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.gson.Gson;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class VisualServiceActivity extends AppCompatActivity
-        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMyLocationClickListener,
-        ActivityCompat.OnRequestPermissionsResultCallback {
+        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener  {
 
+    private static final String TAG = VisualServiceActivity.class.getSimpleName();
+    private static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private FusedLocationProviderClient fusedLocationClient;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private SettingsClient mSettingsClient;
+    private LocationRequest mLocationRequest;
+    private Location mCurrentLocation;
+    private Boolean mRequestingLocationUpdates;
+    private String mLastUpdateTime;
+
+
     private GoogleMap mMap;
     private Location mLocation;
     private RadioButton mCovid19;
@@ -64,21 +64,31 @@ public class VisualServiceActivity extends AppCompatActivity
     private Button mUpdate;
     private Button mHealthy;
     private static Context mContext;
-    private String url ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mContext = getApplicationContext();
 
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mSettingsClient = LocationServices.getSettingsClient(this);
+
         setContentView(R.layout.syptoms_heatmap);
+
+        mFusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            mCurrentLocation = mLocation = location;
+                        }
+                    }
+                });
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         RadioGroup lRadioGroup = (RadioGroup) findViewById(R.id.radioLevels);
         lRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -98,37 +108,45 @@ public class VisualServiceActivity extends AppCompatActivity
             }
         });
 
-        final GenerateHeatMap generateHeatMap = new GenerateHeatMap();
-
         mHealthy = (Button) findViewById(R.id.healthy);
         mHealthy.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    generateHeatMap.addHeatMap(mMap);
-                } catch (JSONException e) {
-                    Log.d("MAP_PARSING", "Json parsing expection for rendering map");
-                    //Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show();
-                }
                 LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
                 lInputPanel.setVisibility(View.INVISIBLE);
+
+                new GenerateHeatMap().getMapData(mMap, mContext);
             }
         });
         mUpdate = (Button) findViewById(R.id.update);
         mUpdate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    generateHeatMap.addHeatMap(mMap);
-                } catch (JSONException e) {
-                    Log.d("MAP_PARSING", "Json parsing expection for rendering map");
-                    //Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show();
-                }
-
                 LinearLayout lInputPanel = (LinearLayout) findViewById(R.id.inputBox);
                 lInputPanel.setVisibility(View.INVISIBLE);
 
                 prepareOutboundData();
             }
         });
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            // Check for the integer request code originally supplied to startResolutionForResult().
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        Log.i(TAG, "User agreed to make required location settings changes.");
+                        // Nothing to do. startLocationupdates() gets called in onResume again.
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        Log.i(TAG, "User chose not to make required location settings changes.");
+                        mRequestingLocationUpdates = false;
+                        break;
+                }
+                break;
+        }
     }
 
     public void onCheckboxClicked(View view) {
@@ -180,14 +198,14 @@ public class VisualServiceActivity extends AppCompatActivity
     }
 
     private void prepareOutboundData() {
-        DataObject dataObject = new DataObject();
+        RequestDataObject requestDataObject = new RequestDataObject();
 
         List<String>  symtompsList = new ArrayList<>();
         List<String>  diagnosesList = new ArrayList<>();
 
-        dataObject.setId(Utils.id(mContext));
-        dataObject.setLocation(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()));
-        dataObject.setTimestamp(System.currentTimeMillis());
+        requestDataObject.setId(Utils.id(mContext));
+        requestDataObject.setLocation(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
+        requestDataObject.setTimestamp(System.currentTimeMillis());
 
         if (mCovid19 != null && mCovid19.isSelected()) {
             diagnosesList.add(mCovid19.getText().toString());
@@ -220,47 +238,9 @@ public class VisualServiceActivity extends AppCompatActivity
 
         }
 
-        dataObject.setSymptoms(symtompsList);
-        dataObject.setDiagnoses(diagnosesList);
-        sendRequst(dataObject);
-    }
-
-    private void sendRequst(DataObject dataObject) {
-        Gson gson = new Gson();
-        String outBoundMessage = gson.toJson(dataObject);
-
-        Log.d("REQUEST_OBJECT", outBoundMessage);
-
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        JSONObject postparams=null;
-        try {
-            postparams = new JSONObject(outBoundMessage);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        // Request a string response from the provided URL.
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST,
-                url, postparams,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // Display the first 500 characters of the response string.
-                        Log.d("POST", response.toString());
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                error.printStackTrace(pw);
-                Log.e("POST_ERROR", sw.toString());
-            }
-        });
-
-        // Add the request to the RequestQueue.
-        queue.add(jsonObjReq);
+        requestDataObject.setSymptoms(symtompsList);
+        requestDataObject.setDiagnoses(diagnosesList);
+        new GenerateHeatMap().sendRequest(mMap, requestDataObject, this);
     }
 
     @Override
@@ -285,7 +265,7 @@ public class VisualServiceActivity extends AppCompatActivity
                 mMap.setMyLocationEnabled(true);
             }
 
-            fusedLocationClient.getLastLocation()
+            mFusedLocationClient.getLastLocation()
                     .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
@@ -322,8 +302,6 @@ public class VisualServiceActivity extends AppCompatActivity
             // [END_EXCLUDE]
         }
     }
-    // [END maps_check_location_permission_result]
-
 
     @Override
     public boolean onMyLocationButtonClick() {
@@ -337,4 +315,5 @@ public class VisualServiceActivity extends AppCompatActivity
     public void onMyLocationClick(@NonNull Location location) {
         Toast.makeText(this, "Current location:\n" + location.getLatitude() + ", " + location.getLongitude() + ",\nTimestamp: " + location.getTime(), Toast.LENGTH_LONG).show();
     }
+
 }
