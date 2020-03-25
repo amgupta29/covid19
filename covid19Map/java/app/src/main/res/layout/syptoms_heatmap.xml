@@ -152,6 +152,12 @@
         android:paddingBottom="20dp"
         android:visibility="gone">
         <Button
+            android:id="@+id/reloadButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="@string/reloadButton"/>
+        <Button
             android:id="@+id/stopButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

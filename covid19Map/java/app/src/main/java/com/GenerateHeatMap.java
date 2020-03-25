@@ -40,6 +40,35 @@ public class GenerateHeatMap {
     public TileOverlay mCovid19TileOverlay;
     public TileOverlay mFluTileOverlay;
 
+    public void getMapData(Context context, final GoogleMap pMap) {
+        Log.e("REQUEST_MAP_DATA", "context :"+context);
+
+        // Request a string response from the provided URL.
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @RequiresApi(api = Build.VERSION_CODES.N)
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.e("GET", response.toString());
+                        addHeatMap(response, pMap);
+                        //mResponseGet = response;
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        error.printStackTrace(pw);
+                        Log.e("GET_ERROR", sw.toString());
+                    }
+                });
+        // Add the request to the RequestQueue.
+        RequestQueueSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
+
+    }
+
     public void addHeatMap(JSONObject mapData, GoogleMap pMap) {
         ObjectMapper objectMapper = new ObjectMapper();
         ResponseMapDataObject responseMapDataObject = null;
@@ -64,11 +93,11 @@ public class GenerateHeatMap {
             if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
                 //covid19List.add(latLng);
                 covid19List.add(weightedLatLng);
-                Log.e("COVID19_DATA", fluList.toString());
+                Log.d("COVID19_DATA", fluList.toString());
             } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
 //              fluList.add(latLng);
                 fluList.add(weightedLatLng);
-                Log.e("FLU_DATA", fluList.toString());
+                Log.d("FLU_DATA", fluList.toString());
 
             }
 
@@ -82,6 +111,7 @@ public class GenerateHeatMap {
                     .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
                     .build();
             mFluTileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
+            mFluTileOverlay.setVisible(false);
         }
 
         if(!covid19List.isEmpty()) {
@@ -90,7 +120,9 @@ public class GenerateHeatMap {
                     .build();
             // Add a tile overlay to the map, using the heat map tile provider.
             mCovid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
+            mCovid19TileOverlay.setVisible(false);
         }
+
     }
 
     // Create the gradient.
@@ -98,8 +130,9 @@ public class GenerateHeatMap {
             Color.rgb(79, 195, 247), // blue
             //Color.rgb(255, 235, 59), // yellow
             //Color.rgb(255, 152, 0), // orange
-            Color.rgb(255, 152, 0), // orange
+            //Color.rgb(255, 152, 0), // orange
             //Color.rgb(255, 0, 0),   // red
+            Color.rgb(255, 0, 0), //red
             Color.rgb(255, 0, 0), // red
             Color.rgb(255, 0, 0)    // red
     };
@@ -108,10 +141,13 @@ public class GenerateHeatMap {
             //Color.rgb(225, 215, 0), // green
             //Color.rgb(255, 140, 0)    // orange
             Color.rgb(79, 195, 247), // blue
-            Color.rgb(255, 235, 59), // yellow
-            //Color.rgb(255, 152, 0), // orange
+            //Color.rgb(255, 235, 59), // yellow
+            //Color.rgb(255, 235, 59), // yellow
+            //Color.rgb(255, 235, 59), // yellow
             Color.rgb(255, 152, 0), // orange
-            Color.rgb(255, 152, 0), //orange
+            Color.rgb(255, 152, 0), // orange
+            Color.rgb(255, 152, 0) // orange
+            //Color.rgb(255, 152, 0), //orange
             // Color.rgb(244, 100, 54)    // red
     };
 
@@ -159,38 +195,19 @@ public class GenerateHeatMap {
         //getMapData(context);
     }
 
-    public void getMapData(Context context, final GoogleMap pMap) {
-        Log.d("REQUEST_MAP_DATA", "context :"+context);
-
-        // Request a string response from the provided URL.
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-
-                    @RequiresApi(api = Build.VERSION_CODES.N)
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.e("GET", response.toString());
-                            addHeatMap(response, pMap);
-                        //mResponseGet = response;
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        StringWriter sw = new StringWriter();
-                        PrintWriter pw = new PrintWriter(sw);
-                        error.printStackTrace(pw);
-                        Log.e("GET_ERROR", sw.toString());
-                    }
-                });
-        // Add the request to the RequestQueue.
-        RequestQueueSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
-
-        /*if(mResponseGet != null)
-            return mResponseGet;
-        else return new JSONObject();*/
+    public void resetMapUI() {
+        if(null != mCovid19TileOverlay)
+            mCovid19TileOverlay.remove();
+        if(null != mFluTileOverlay)
+            mFluTileOverlay.remove();
     }
 
+    public void viewMapData(boolean status) {
+        if(null != mCovid19TileOverlay)
+            mCovid19TileOverlay.setVisible(status);
+        if(null != mFluTileOverlay)
+            mFluTileOverlay.setVisible(status);
+    }
 
     /**
      * Test data

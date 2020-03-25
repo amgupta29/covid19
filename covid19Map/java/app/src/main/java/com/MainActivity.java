@@ -55,16 +55,13 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 0x1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 0x2;
+    private static Context mContext;
 
     // UI elements.
     private Button mUpdatesButton;
     private Button mStopButton;
     private LinearLayout mStopButtonPanel;
     private LinearLayout mInputPanel;
-    private GoogleMap mMap;
-    private Location mCurrentLocation;
-    private Location mLocation;
-    private FusedLocationProviderClient mFusedLocationClient;
     private RadioButton mCovid19;
     private RadioButton mSymptom;
     private CheckBox mCough;
@@ -74,10 +71,18 @@ public class MainActivity extends AppCompatActivity
     private CheckBox mChestPain;
     private CheckBox mWeakness;
     private CheckBox mDiahorrea;
-    private Button mUpdate;
+    private RadioGroup mRadioGroup;
     private Button mHealthy;
-    private static Context mContext;
-    private GenerateHeatMap mGenerateHeatMap;
+    private Button mReloadButton;
+
+    //Location
+    private GoogleMap mMap;
+    private Location mCurrentLocation;
+    private Location mLocation;
+    private FusedLocationProviderClient mFusedLocationClient;
+
+
+    private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
     private RequestDataObject mRequestDataObject = new RequestDataObject();
 
     // The BroadcastReceiver used to listen from broadcasts from the service.
@@ -132,21 +137,21 @@ public class MainActivity extends AppCompatActivity
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
             if (location != null) {
-                Toast.makeText(MainActivity.this, Utils.getLocationText(location),
-                        Toast.LENGTH_SHORT).show();
+                /*Toast.makeText(MainActivity.this, Utils.getLocationText(location),
+                        Toast.LENGTH_SHORT).show();*/
 
                 mCurrentLocation = location;
                 mRequestDataObject = prepareOutboundData();
-                mService.initialiseDataObject(mRequestDataObject, mContext);
-                //mGenerateHeatMap.sendRequest(mRequestDataObject, mContext);
-                //mGenerateHeatMap.getMapData(mContext, mMap);
+                mService.initialiseDataObject(mRequestDataObject);
             }
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.e(TAG, "onCreate");
         super.onCreate(savedInstanceState);
+
 
         mContext = getApplicationContext();
         setContentView(R.layout.syptoms_heatmap);
@@ -162,7 +167,6 @@ public class MainActivity extends AppCompatActivity
         }
 
         myReceiver = new MyReceiver();
-        mGenerateHeatMap = new GenerateHeatMap();
 
         UIInitialisation();
     }
@@ -170,6 +174,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onStart() {
+        Log.e(TAG, "onStart");
         super.onStart();
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
@@ -181,8 +186,32 @@ public class MainActivity extends AppCompatActivity
                     requestPermissions();
                 } else {
                     mService.requestLocationUpdates();
-                    //prepareOutboundData();
                     mGenerateHeatMap.getMapData(mContext, mMap);
+                    mGenerateHeatMap.viewMapData(true);
+                }
+            }
+        });
+
+        mHealthy.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    mService.requestLocationUpdates();
+                    mGenerateHeatMap.getMapData(mContext, mMap);
+                    mGenerateHeatMap.viewMapData(true);
+                }
+            }
+        });
+
+        mReloadButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    //mService.requestLocationUpdates();
+                    mGenerateHeatMap.getMapData(mContext, mMap);
+                    mGenerateHeatMap.viewMapData(true);
                 }
             }
         });
@@ -191,23 +220,11 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 mService.removeLocationUpdates();
+                mGenerateHeatMap.viewMapData(false);
                 resetUI();
             }
         });
 
-        mHealthy.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-
-                } else {
-                    mService.requestLocationUpdates();
-                    //prepareOutboundData();
-                    mGenerateHeatMap.getMapData(mContext, mMap);
-                }
-
-            }
-        });
 
         // Restore the state of the buttons when the activity (re)launches.
         setButtonsState(Utils.requestingLocationUpdates(this));
@@ -220,6 +237,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onResume() {
+        Log.e(TAG, "onResume");
         super.onResume();
         LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
@@ -227,12 +245,14 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onPause() {
+        Log.e(TAG, "onPause");
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
     }
 
     @Override
     protected void onStop() {
+        Log.e(TAG, "onStop");
         if (mBound) {
             // Unbind from the service. This signals to the service that this activity is no longer
             // in the foreground, and the service can respond by promoting itself to a foreground
@@ -330,21 +350,29 @@ public class MainActivity extends AppCompatActivity
         mInputPanel = (LinearLayout) findViewById(R.id.inputBox);
         mUpdatesButton = (Button) findViewById(R.id.update);
         mStopButton = (Button) findViewById(R.id.stopButton);
-        RadioGroup lRadioGroup = (RadioGroup) findViewById(R.id.radioLevels);
+        mRadioGroup = (RadioGroup) findViewById(R.id.radioLevels);
         mCovid19 = (RadioButton) findViewById(R.id.covid19);
         mSymptom = (RadioButton) findViewById(R.id.symptoms);
         mHealthy = (Button) findViewById(R.id.healthy);
+        mSymptom = (RadioButton) findViewById(R.id.symptoms);
+        mCough = (CheckBox) findViewById(R.id.cough);
+        mFever = (CheckBox) findViewById(R.id.fever);
+        mSoreThroat = (CheckBox) findViewById(R.id.soreThroat);
+        mBreathless = (CheckBox) findViewById(R.id.breathless);
+        mBreathless = (CheckBox) findViewById(R.id.breathless);
+        mChestPain = (CheckBox) findViewById(R.id.chestPain);
+        mWeakness = (CheckBox) findViewById(R.id.severeWeakness);
+        mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
+        mCovid19 = (RadioButton) findViewById(R.id.covid19);
+        mReloadButton = (Button) findViewById(R.id.reloadButton);
 
-        if( !mCovid19.isSelected() && !mSymptom.isSelected()) {
-            mUpdatesButton.setEnabled(false);
-        } else {
-            mUpdatesButton.setEnabled(true);
-        }
+        resetUI();
 
-        lRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        mRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 if (checkedId == R.id.symptoms) {
+                    mSymptom.setSelected(true);
                     LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
                     lInputCheckBoxPanel.setVisibility(View.VISIBLE);
                 } else if (checkedId == R.id.covid19) {
@@ -356,43 +384,24 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        /*mHealthy.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-
-                //mGenerateHeatMap.getMapData(mMap, mContext);
-            }
-        });*/
     }
 
     private void resetUI() {
-        mSymptom = (RadioButton) findViewById(R.id.symptoms);
-        mSymptom.setSelected(false);
 
-        mCough = (CheckBox) findViewById(R.id.cough);
+        mSymptom.setChecked(false);
         mCough.setChecked(false);
-        mFever = (CheckBox) findViewById(R.id.fever);
         mFever.setChecked(false);
-        mSoreThroat = (CheckBox) findViewById(R.id.soreThroat);
         mSoreThroat.setChecked(false);
-        mBreathless = (CheckBox) findViewById(R.id.breathless);
         mBreathless.setChecked(false);
-        mBreathless = (CheckBox) findViewById(R.id.breathless);
         mBreathless.setChecked(false);
-        mChestPain = (CheckBox) findViewById(R.id.chestPain);
         mChestPain.setChecked(false);
-        mWeakness = (CheckBox) findViewById(R.id.severeWeakness);
         mWeakness.setChecked(false);
-        mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
         mDiahorrea.setChecked(false);
+        mCovid19.setChecked(false);
 
-        mCovid19 = (RadioButton) findViewById(R.id.covid19);
-        mCovid19.setSelected(false);
+        mUpdatesButton.setEnabled(false);
+        mHealthy.setEnabled(true);
 
-        //reset map overlay
-        if(null != mGenerateHeatMap.mCovid19TileOverlay)
-            mGenerateHeatMap.mCovid19TileOverlay.remove();
-        if(null != mGenerateHeatMap.mFluTileOverlay)
-            mGenerateHeatMap.mFluTileOverlay.remove();
     }
 
     public void onCheckboxClicked(View view) {
@@ -486,14 +495,12 @@ public class MainActivity extends AppCompatActivity
         requestDataObject.setSymptoms(symtompsList);
         requestDataObject.setDiagnoses(diagnosesList);
 
-//        mGenerateHeatMap.sendRequest(requestDataObject, this);
-//        mGenerateHeatMap.getMapData(mContext, mMap);
-
         return requestDataObject;
     }
 
     @Override
     public void onMapReady(GoogleMap map) {
+        Log.e(TAG, "onMapReady");
         mMap = map;
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         mMap.getUiSettings().setZoomControlsEnabled(true);
@@ -501,7 +508,10 @@ public class MainActivity extends AppCompatActivity
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMyLocationClickListener(this);
 
+        mGenerateHeatMap.getMapData(mContext, mMap);
+
         enableMyLocation();
+
     }
 
     /**

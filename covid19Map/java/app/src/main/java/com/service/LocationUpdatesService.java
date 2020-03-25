@@ -24,6 +24,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Binder;
@@ -41,6 +42,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.GenerateHeatMap;
 import com.R;
 import com.domain.RequestDataObject;
+import com.google.android.gms.maps.GoogleMap;
 import com.utils.Utils;
 import com.MainActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -133,25 +135,31 @@ public class LocationUpdatesService extends Service {
      */
     private Location mLocation;
 
+    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();;
+
+    private RequestDataObject mRequestDataObject;
+
+    //private GoogleMap mMap;
+
     public LocationUpdatesService() {
     }
 
-    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
-
-    private RequestDataObject mRequestDataObject;
-    private Context mContext;
-
     @Override
     public void onCreate() {
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        SharedPreferences prefs = getSharedPreferences(
+                "com", Context.MODE_PRIVATE);
+        String requestDataObject = prefs.getString("REQUEST_DATA_OBJECT", "");
+        //prefs.putString("REQUEST_DATA_OBJECT", "");
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
-                if (mRequestDataObject != null && mContext != null)
-                    mGenerateHeatMap.sendRequest(mRequestDataObject, mContext);
+                if (mRequestDataObject != null /*&& mContext != null*/)
+                    mGenerateHeatMap.sendRequest(mRequestDataObject, getApplicationContext());
 
             }
         };
@@ -176,9 +184,9 @@ public class LocationUpdatesService extends Service {
         }
     }
 
-    public void initialiseDataObject(RequestDataObject pRequestDataObject, Context pContext) {
+    public void initialiseDataObject(RequestDataObject pRequestDataObject) {
         mRequestDataObject = pRequestDataObject;
-        mContext = pContext;
+        //mMap = pMap;
     }
 
     @Override
