@@ -38,7 +38,9 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.GenerateHeatMap;
 import com.R;
+import com.domain.RequestDataObject;
 import com.utils.Utils;
 import com.MainActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -134,6 +136,11 @@ public class LocationUpdatesService extends Service {
     public LocationUpdatesService() {
     }
 
+    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
+
+    private RequestDataObject mRequestDataObject;
+    private Context mContext;
+
     @Override
     public void onCreate() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -143,6 +150,9 @@ public class LocationUpdatesService extends Service {
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
+                if (mRequestDataObject != null && mContext != null)
+                    mGenerateHeatMap.sendRequest(mRequestDataObject, mContext);
+
             }
         };
 
@@ -164,6 +174,11 @@ public class LocationUpdatesService extends Service {
             // Set the Notification Channel for the Notification Manager.
             mNotificationManager.createNotificationChannel(mChannel);
         }
+    }
+
+    public void initialiseDataObject(RequestDataObject pRequestDataObject, Context pContext) {
+        mRequestDataObject = pRequestDataObject;
+        mContext = pContext;
     }
 
     @Override

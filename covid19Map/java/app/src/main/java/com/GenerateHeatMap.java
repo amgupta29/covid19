@@ -37,11 +37,10 @@ import java.util.List;
 public class GenerateHeatMap {
 
     private String url ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
-    public TileOverlay covid19TileOverlay;
-    public TileOverlay fluTileOverlay;
+    public TileOverlay mCovid19TileOverlay;
+    public TileOverlay mFluTileOverlay;
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    public void addHeatMap(GoogleMap pMap, JSONObject mapData) {
+    public void addHeatMap(JSONObject mapData, GoogleMap pMap) {
         ObjectMapper objectMapper = new ObjectMapper();
         ResponseMapDataObject responseMapDataObject = null;
         try {
@@ -75,21 +74,22 @@ public class GenerateHeatMap {
 
         }
 
-        Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
         Gradient fluGradient = new Gradient(fluColors, startPoints);
+        Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
+
+        if(!fluList.isEmpty()) {
+            HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
+                    .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
+                    .build();
+            mFluTileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
+        }
 
         if(!covid19List.isEmpty()) {
             HeatmapTileProvider covid19Provider = new HeatmapTileProvider.Builder()
                     .weightedData(covid19List).gradient(covid19Gradient).radius(50).opacity(1).maxIntensity(10)
                     .build();
             // Add a tile overlay to the map, using the heat map tile provider.
-            covid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
-        }
-        if(!fluList.isEmpty()) {
-            HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
-                    .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
-                    .build();
-            fluTileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(fluProvider));
+            mCovid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
         }
     }
 
@@ -119,7 +119,7 @@ public class GenerateHeatMap {
             0.2f, 0.8f, 0.9f, 1.0f
     };
 
-    public void sendRequest(GoogleMap mMap, RequestDataObject requestDataObject, Context context) {
+    public void sendRequest(RequestDataObject requestDataObject, Context context) {
         Gson gson = new Gson();
         String outBoundMessage = gson.toJson(requestDataObject);
 
@@ -156,11 +156,11 @@ public class GenerateHeatMap {
         // Add the request to the RequestQueue.
         RequestQueueSingleton.getInstance(context).addToRequestQueue(jsonObjReq);
 
-        getMapData(mMap, context);
+        //getMapData(context);
     }
 
-    public void getMapData(final GoogleMap mMap, Context context) {
-        Log.d("REQUEST_MAP_DATA", "");
+    public void getMapData(Context context, final GoogleMap pMap) {
+        Log.d("REQUEST_MAP_DATA", "context :"+context);
 
         // Request a string response from the provided URL.
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -170,7 +170,8 @@ public class GenerateHeatMap {
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.e("GET", response.toString());
-                            addHeatMap(mMap, response);
+                            addHeatMap(response, pMap);
+                        //mResponseGet = response;
                     }
                 }, new Response.ErrorListener() {
 
@@ -180,12 +181,14 @@ public class GenerateHeatMap {
                         PrintWriter pw = new PrintWriter(sw);
                         error.printStackTrace(pw);
                         Log.e("GET_ERROR", sw.toString());
-
                     }
                 });
         // Add the request to the RequestQueue.
         RequestQueueSingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
 
+        /*if(mResponseGet != null)
+            return mResponseGet;
+        else return new JSONObject();*/
     }
 
 
