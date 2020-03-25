@@ -1,4 +1,4 @@
-package com.domainObjects;
+package com.domain;
 
 import com.google.android.gms.maps.model.LatLng;
 

@@ -1,4 +1,4 @@
-package com;
+package com.service;
 
 import android.app.Service;
 import android.content.Context;

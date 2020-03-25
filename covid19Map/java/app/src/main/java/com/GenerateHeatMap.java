@@ -8,14 +8,12 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import com.domainObjects.OperationResponse;
-import com.domainObjects.RequestDataObject;
-import com.domainObjects.ResponseMapDataObject;
+import com.domain.OperationResponse;
+import com.domain.RequestDataObject;
+import com.domain.ResponseMapDataObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;

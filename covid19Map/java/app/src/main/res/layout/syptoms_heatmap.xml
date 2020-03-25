@@ -14,10 +14,12 @@
      limitations under the License.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/map_container"
     android:gravity="center_vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context="com.MainActivity">
 
     <fragment
         android:id="@+id/map"
@@ -137,7 +139,7 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/backButtonPanel"
+        android:id="@+id/stopButtonPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/white"
@@ -150,11 +152,11 @@
         android:paddingBottom="20dp"
         android:visibility="gone">
         <Button
-            android:id="@+id/backButton"
+            android:id="@+id/stopButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="@string/backButton"/>
+            android:text="@string/stopButton"/>
     </LinearLayout>
 
 </RelativeLayout>
