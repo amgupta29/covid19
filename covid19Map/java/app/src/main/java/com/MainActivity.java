@@ -16,6 +16,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -82,8 +83,9 @@ public class MainActivity extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationClient;
 
 
-    private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
-    private RequestDataObject mRequestDataObject = new RequestDataObject();
+    //private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
+    private MapDataProcessor mMapDataProcessor;
+    private RequestDataObject mRequestDataObject;
 
     // The BroadcastReceiver used to listen from broadcasts from the service.
     private MyReceiver myReceiver;
@@ -167,8 +169,12 @@ public class MainActivity extends AppCompatActivity
         }
 
         myReceiver = new MyReceiver();
+        mMapDataProcessor = new MapDataProcessor();
+        mRequestDataObject = new RequestDataObject();
 
         UIInitialisation();
+
+        buttonListenerActions();
     }
 
 
@@ -179,55 +185,7 @@ public class MainActivity extends AppCompatActivity
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
 
-        mUpdatesButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    mService.requestLocationUpdates();
-                    mGenerateHeatMap.getMapData(mContext, mMap);
-                    mGenerateHeatMap.viewMapData(true);
-                }
-            }
-        });
-
-        mHealthy.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    mService.requestLocationUpdates();
-                    mGenerateHeatMap.getMapData(mContext, mMap);
-                    mGenerateHeatMap.viewMapData(true);
-                }
-            }
-        });
-
-        mReloadButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    //mService.requestLocationUpdates();
-                    mGenerateHeatMap.getMapData(mContext, mMap);
-                    mGenerateHeatMap.viewMapData(true);
-                }
-            }
-        });
-
-        mStopButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mService.removeLocationUpdates();
-                mGenerateHeatMap.viewMapData(false);
-                resetUI();
-            }
-        });
-
-
-        // Restore the state of the buttons when the activity (re)launches.
-        setButtonsState(Utils.requestingLocationUpdates(this));
+        buttonListenerActions();
 
         // Bind to the service. If the service is in foreground mode, this signals to the service
         // that since this activity is in the foreground, the service can exit foreground mode.
@@ -239,6 +197,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         Log.e(TAG, "onResume");
         super.onResume();
+        buttonListenerActions();
         LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
     }
@@ -246,6 +205,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onPause() {
         Log.e(TAG, "onPause");
+        buttonListenerActions();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
     }
@@ -257,6 +217,7 @@ public class MainActivity extends AppCompatActivity
             // Unbind from the service. This signals to the service that this activity is no longer
             // in the foreground, and the service can respond by promoting itself to a foreground
             // service.
+            buttonListenerActions();
             unbindService(mServiceConnection);
             mBound = false;
         }
@@ -266,6 +227,67 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
     }
 
+    private void buttonListenerActions() {
+        mUpdatesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    mService.requestLocationUpdates();
+                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
+                            Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.BOTTOM, 0, 400);
+                    toast.show();
+                    mMapDataProcessor.getMapData(mContext, mMap);
+                }
+            }
+        });
+
+        mHealthy.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    mService.requestLocationUpdates();
+                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
+                            Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.BOTTOM, 0, 400);
+                    toast.show();
+                    mMapDataProcessor.getMapData(mContext, mMap);
+                }
+            }
+        });
+
+        mReloadButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    //mService.requestLocationUpdates();
+                    mMap.clear();
+                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
+                            Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.BOTTOM, 0, 400);
+                    toast.show();
+                    mMapDataProcessor.getMapData(mContext, mMap);
+                }
+            }
+        });
+
+        mStopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mService.removeLocationUpdates();
+                mMap.clear();
+                resetUI();
+            }
+        });
+
+
+        // Restore the state of the buttons when the activity (re)launches.
+        setButtonsState(Utils.requestingLocationUpdates(this));
+    }
     private boolean checkPermissions() {
         return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION);
@@ -508,7 +530,7 @@ public class MainActivity extends AppCompatActivity
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMyLocationClickListener(this);
 
-        mGenerateHeatMap.getMapData(mContext, mMap);
+        //mMapDataProcessor.getMapData(mContext, mMap);
 
         enableMyLocation();
 

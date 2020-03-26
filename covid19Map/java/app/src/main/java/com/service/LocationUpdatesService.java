@@ -40,6 +40,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.GenerateHeatMap;
+import com.MapDataProcessor;
 import com.R;
 import com.domain.RequestDataObject;
 import com.google.android.gms.maps.GoogleMap;
@@ -135,7 +136,9 @@ public class LocationUpdatesService extends Service {
      */
     private Location mLocation;
 
-    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();;
+    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
+
+    private MapDataProcessor mMapDataProcessor = new MapDataProcessor();
 
     private RequestDataObject mRequestDataObject;
 
@@ -159,7 +162,7 @@ public class LocationUpdatesService extends Service {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
                 if (mRequestDataObject != null /*&& mContext != null*/)
-                    mGenerateHeatMap.sendRequest(mRequestDataObject, getApplicationContext());
+                    mMapDataProcessor.sendRequest(mRequestDataObject, getApplicationContext());
 
             }
         };
