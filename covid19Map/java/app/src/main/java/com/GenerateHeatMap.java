@@ -47,18 +47,20 @@ public class GenerateHeatMap {
         List<OperationResponse> operationResponseList = responseMapDataObject.getOperationResponse();
         for (OperationResponse operationResponseListObj:
         operationResponseList) {
-            LatLng latLng = new LatLng(operationResponseListObj.getValue().getLatitude(), operationResponseListObj.getValue().getLongitude());
-            WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
+            if(operationResponseListObj != null) {
+                LatLng latLng = new LatLng(operationResponseListObj.getValue().getLatitude(), operationResponseListObj.getValue().getLongitude());
+                WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
 
-            if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
-                //covid19List.add(latLng);
-                covid19List.add(weightedLatLng);
-                Log.d("COVID19_DATA", fluList.toString());
-            } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
+                if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
+                    //covid19List.add(latLng);
+                    covid19List.add(weightedLatLng);
+                    Log.d("COVID19_DATA", fluList.toString());
+                } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
 //              fluList.add(latLng);
-                fluList.add(weightedLatLng);
-                Log.d("FLU_DATA", fluList.toString());
+                    fluList.add(weightedLatLng);
+                    Log.d("FLU_DATA", fluList.toString());
 
+                }
             }
 
         }

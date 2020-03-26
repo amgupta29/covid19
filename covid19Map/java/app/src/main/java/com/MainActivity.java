@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity
 
         UIInitialisation();
 
-        buttonListenerActions();
+        //buttonListenerActions();
     }
 
 
@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         Log.e(TAG, "onResume");
         super.onResume();
-        buttonListenerActions();
+        //buttonListenerActions();
         LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
     }
@@ -205,7 +205,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onPause() {
         Log.e(TAG, "onPause");
-        buttonListenerActions();
+        //buttonListenerActions();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
     }
@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity
             // Unbind from the service. This signals to the service that this activity is no longer
             // in the foreground, and the service can respond by promoting itself to a foreground
             // service.
-            buttonListenerActions();
+            //buttonListenerActions();
             unbindService(mServiceConnection);
             mBound = false;
         }
@@ -228,22 +228,26 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void buttonListenerActions() {
-        mUpdatesButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    mService.requestLocationUpdates();
-                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
-                            Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.BOTTOM, 0, 400);
-                    toast.show();
-                    mMapDataProcessor.getMapData(mContext, mMap);
-                }
-            }
-        });
+        if (mUpdatesButton != null) {
 
+            mUpdatesButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (!checkPermissions()) {
+                        requestPermissions();
+                    } else {
+                        mService.requestLocationUpdates();
+                        Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
+                                Toast.LENGTH_LONG);
+                        toast.setGravity(Gravity.BOTTOM, 0, 400);
+                        toast.show();
+                        mMapDataProcessor.getMapData(mContext, mMap);
+                    }
+                }
+            });
+        }
+
+        if (mHealthy != null) {
         mHealthy.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!checkPermissions()) {
@@ -257,33 +261,37 @@ public class MainActivity extends AppCompatActivity
                     mMapDataProcessor.getMapData(mContext, mMap);
                 }
             }
-        });
+        }); }
 
-        mReloadButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    //mService.requestLocationUpdates();
-                    mMap.clear();
-                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
-                            Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.BOTTOM, 0, 400);
-                    toast.show();
-                    mMapDataProcessor.getMapData(mContext, mMap);
+        if (mReloadButton != null) {
+
+            mReloadButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    if (!checkPermissions()) {
+                        requestPermissions();
+                    } else {
+                        //mService.requestLocationUpdates();
+                        mMap.clear();
+                        Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
+                                Toast.LENGTH_LONG);
+                        toast.setGravity(Gravity.BOTTOM, 0, 400);
+                        toast.show();
+                        mMapDataProcessor.getMapData(mContext, mMap);
+                    }
                 }
-            }
-        });
+            });
+        }
 
-        mStopButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mService.removeLocationUpdates();
-                mMap.clear();
-                resetUI();
-            }
-        });
-
+        if (mStopButton != null) {
+            mStopButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mService.removeLocationUpdates();
+                    mMap.clear();
+                    resetUI();
+                }
+            });
+        }
 
         // Restore the state of the buttons when the activity (re)launches.
         setButtonsState(Utils.requestingLocationUpdates(this));
