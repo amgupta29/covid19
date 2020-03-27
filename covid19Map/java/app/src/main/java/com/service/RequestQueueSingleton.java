@@ -1,4 +1,4 @@
-package com;
+package com.service;
 
 import android.content.Context;
 import android.graphics.Bitmap;

@@ -27,11 +27,9 @@
 
     <!-- EXTERNAL_STORAGE permissions are optional for Android 6.0 onwards. -->
     <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="22" />
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="22" />
+        android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -53,11 +51,18 @@
             android:value="AIzaSyBWeaGXhjGXKXq9vL09WVLn_7-7OTKCXvU" />
 
         <!--<activity android:name="com.MainActivity">-->
-        <activity android:name="com.MainActivity">
+        <activity android:name="com.WelcomeActivity">
             <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.MainActivity">
+            <!--<intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
+            </intent-filter>-->
         </activity>
         <!-- Foreground services in Q+ require type. -->
         <service

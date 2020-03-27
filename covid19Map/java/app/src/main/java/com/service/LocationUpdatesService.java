@@ -39,11 +39,8 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.GenerateHeatMap;
-import com.MapDataProcessor;
 import com.R;
 import com.domain.RequestDataObject;
-import com.google.android.gms.maps.GoogleMap;
 import com.utils.Utils;
 import com.MainActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -91,7 +88,7 @@ public class LocationUpdatesService extends Service {
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 60000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
     /**
      * The fastest rate for active location updates. Updates will never be more frequent
@@ -136,13 +133,9 @@ public class LocationUpdatesService extends Service {
      */
     private Location mLocation;
 
-    public GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
-
     private MapDataProcessor mMapDataProcessor = new MapDataProcessor();
 
     private RequestDataObject mRequestDataObject;
-
-    //private GoogleMap mMap;
 
     public LocationUpdatesService() {
     }
@@ -152,16 +145,12 @@ public class LocationUpdatesService extends Service {
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        SharedPreferences prefs = getSharedPreferences(
-                "com", Context.MODE_PRIVATE);
-        String requestDataObject = prefs.getString("REQUEST_DATA_OBJECT", "");
-        //prefs.putString("REQUEST_DATA_OBJECT", "");
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
-                if (mRequestDataObject != null /*&& mContext != null*/)
+                if (mRequestDataObject != null )
                     mMapDataProcessor.sendRequest(mRequestDataObject, getApplicationContext());
 
             }
@@ -180,7 +169,7 @@ public class LocationUpdatesService extends Service {
             CharSequence name = getString(R.string.app_name);
             // Create the channel for the notification
             NotificationChannel mChannel =
-                    new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_DEFAULT);
+                    new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW);
 
             // Set the Notification Channel for the Notification Manager.
             mNotificationManager.createNotificationChannel(mChannel);
@@ -189,7 +178,6 @@ public class LocationUpdatesService extends Service {
 
     public void initialiseDataObject(RequestDataObject pRequestDataObject) {
         mRequestDataObject = pRequestDataObject;
-        //mMap = pMap;
     }
 
     @Override
@@ -315,7 +303,7 @@ public class LocationUpdatesService extends Service {
                 .setContentText(text)
                 .setContentTitle(Utils.getLocationTitle(this))
                 .setOngoing(true)
-                .setPriority(Notification.PRIORITY_HIGH)
+                .setPriority(Notification.VISIBILITY_SECRET)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setTicker(text)
                 .setWhen(System.currentTimeMillis());

@@ -37,5 +37,8 @@
         functionality.</string>
     <string name="settings">Settings</string>
     <string name="reloadButton">Reload Map</string>
+    <string name="accept">Accept</string>
+    <string name="cancel">Cancel</string>
+    <string name="welcomeText">Text to inform you</string>
 
 </resources>

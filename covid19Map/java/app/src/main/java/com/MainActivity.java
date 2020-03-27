@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -32,6 +33,7 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.domain.RequestDataObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
@@ -41,45 +43,35 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 import com.service.LocationUpdatesService;
+import com.service.MapDataProcessor;
 import com.utils.PermissionUtils;
+import com.utils.PrefManager;
 import com.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener,
-        SharedPreferences.OnSharedPreferenceChangeListener  {
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 0x1;
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 0x2;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 0x1, REQUEST_PERMISSIONS_REQUEST_CODE = 0x2;
     private static Context mContext;
 
     // UI elements.
-    private Button mUpdatesButton;
-    private Button mStopButton;
-    private LinearLayout mStopButtonPanel;
-    private LinearLayout mInputPanel;
-    private RadioButton mCovid19;
-    private RadioButton mSymptom;
-    private CheckBox mCough;
-    private CheckBox mFever;
-    private CheckBox mSoreThroat;
-    private CheckBox mBreathless;
-    private CheckBox mChestPain;
-    private CheckBox mWeakness;
-    private CheckBox mDiahorrea;
+    private Button mUpdatesButton, mStopButton, mHealthy, mReloadButton;
+    private LinearLayout mStopButtonPanel, mInputPanel;
+    private RadioButton mCovid19, mSymptom;
+    private CheckBox mCough, mFever, mSoreThroat, mBreathless, mChestPain, mWeakness, mDiahorrea;
     private RadioGroup mRadioGroup;
-    private Button mHealthy;
-    private Button mReloadButton;
 
     //Location
     private GoogleMap mMap;
-    private Location mCurrentLocation;
-    private Location mLocation;
+    private Location mCurrentLocation, mLocation;
     private FusedLocationProviderClient mFusedLocationClient;
 
 
@@ -114,6 +106,35 @@ public class MainActivity extends AppCompatActivity
     };
 
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Log.e(TAG, "onCreate");
+        super.onCreate(savedInstanceState);
+        mContext = getApplicationContext();
+        setContentView(R.layout.syptoms_heatmap);
+        restartMapInitialise();
+
+        UIInitialisation();
+
+        // Check that the user hasn't revoked permissions by going to Settings.
+        if (Utils.requestingLocationUpdates(this)) {
+            if (!checkPermissions()) {
+                requestPermissions();
+            }
+        }
+
+        myReceiver = new MyReceiver();
+        mMapDataProcessor = new MapDataProcessor();
+        mRequestDataObject = new RequestDataObject();
+
+    }
+
+    private void restartMapInitialise() {
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         if (s.equals(Utils.KEY_REQUESTING_LOCATION_UPDATES)) {
             setButtonsState(sharedPreferences.getBoolean(Utils.KEY_REQUESTING_LOCATION_UPDATES,
@@ -142,41 +163,12 @@ public class MainActivity extends AppCompatActivity
                 /*Toast.makeText(MainActivity.this, Utils.getLocationText(location),
                         Toast.LENGTH_SHORT).show();*/
 
-                mCurrentLocation = location;
+                mLocation = mCurrentLocation = location;
                 mRequestDataObject = prepareOutboundData();
                 mService.initialiseDataObject(mRequestDataObject);
             }
         }
     }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        Log.e(TAG, "onCreate");
-        super.onCreate(savedInstanceState);
-
-
-        mContext = getApplicationContext();
-        setContentView(R.layout.syptoms_heatmap);
-        SupportMapFragment mapFragment =
-                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        // Check that the user hasn't revoked permissions by going to Settings.
-        if (Utils.requestingLocationUpdates(this)) {
-            if (!checkPermissions()) {
-                requestPermissions();
-            }
-        }
-
-        myReceiver = new MyReceiver();
-        mMapDataProcessor = new MapDataProcessor();
-        mRequestDataObject = new RequestDataObject();
-
-        UIInitialisation();
-
-        //buttonListenerActions();
-    }
-
 
     @Override
     protected void onStart() {
@@ -185,7 +177,7 @@ public class MainActivity extends AppCompatActivity
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
 
-        buttonListenerActions();
+        onButtonActions();
 
         // Bind to the service. If the service is in foreground mode, this signals to the service
         // that since this activity is in the foreground, the service can exit foreground mode.
@@ -227,7 +219,7 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
     }
 
-    private void buttonListenerActions() {
+    private void onButtonActions() {
         if (mUpdatesButton != null) {
 
             mUpdatesButton.setOnClickListener(new View.OnClickListener() {
@@ -237,31 +229,24 @@ public class MainActivity extends AppCompatActivity
                         requestPermissions();
                     } else {
                         mService.requestLocationUpdates();
-                        Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
-                                Toast.LENGTH_LONG);
-                        toast.setGravity(Gravity.BOTTOM, 0, 400);
-                        toast.show();
-                        mMapDataProcessor.getMapData(mContext, mMap);
+                        postMapData();
                     }
                 }
             });
         }
 
         if (mHealthy != null) {
-        mHealthy.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!checkPermissions()) {
-                    requestPermissions();
-                } else {
-                    mService.requestLocationUpdates();
-                    Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
-                            Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.BOTTOM, 0, 400);
-                    toast.show();
-                    mMapDataProcessor.getMapData(mContext, mMap);
+            mHealthy.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    if (!checkPermissions()) {
+                        requestPermissions();
+                    } else {
+                        mService.requestLocationUpdates();
+                        postMapData();
+                    }
                 }
-            }
-        }); }
+            });
+        }
 
         if (mReloadButton != null) {
 
@@ -272,11 +257,7 @@ public class MainActivity extends AppCompatActivity
                     } else {
                         //mService.requestLocationUpdates();
                         mMap.clear();
-                        Toast toast = Toast.makeText(MainActivity.this, "Map is loading...",
-                                Toast.LENGTH_LONG);
-                        toast.setGravity(Gravity.BOTTOM, 0, 400);
-                        toast.show();
-                        mMapDataProcessor.getMapData(mContext, mMap);
+                        postMapData();
                     }
                 }
             });
@@ -296,8 +277,22 @@ public class MainActivity extends AppCompatActivity
         // Restore the state of the buttons when the activity (re)launches.
         setButtonsState(Utils.requestingLocationUpdates(this));
     }
+
+    private void postMapData() {
+        if (mLocation != null) {
+            mMapDataProcessor.getMapData(mContext, mMap, mLocation);
+        } else {
+            Toast toast_error = Toast.makeText(MainActivity.this, "Unable to get your location. Please try again.",
+                    Toast.LENGTH_LONG);
+            toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+            toast_error.show();
+
+            getLastKnownOrLatestLocation();
+        }
+    }
+
     private boolean checkPermissions() {
-        return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
@@ -346,7 +341,10 @@ public class MainActivity extends AppCompatActivity
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
+                //if(mMap == null) {
+                //restartMapInitialise();
                 enableMyLocation();
+                //}
                 //mService.requestLocationUpdates();
                 //setButtonsState(Utils.requestingLocationUpdates(this));
             } else {
@@ -484,8 +482,8 @@ public class MainActivity extends AppCompatActivity
 
     private RequestDataObject prepareOutboundData() {
         RequestDataObject requestDataObject = new RequestDataObject();
-        List<String>  symtompsList = new ArrayList<>();
-        List<String>  diagnosesList = new ArrayList<>();
+        List<String> symtompsList = new ArrayList<>();
+        List<String> diagnosesList = new ArrayList<>();
 
         requestDataObject.setId(Utils.id(mContext));
         requestDataObject.setLocation(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
@@ -538,10 +536,14 @@ public class MainActivity extends AppCompatActivity
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMyLocationClickListener(this);
 
-        //mMapDataProcessor.getMapData(mContext, mMap);
-
         enableMyLocation();
 
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                mMap.setMyLocationEnabled(true);
+            }
+        });
     }
 
     /**
@@ -551,21 +553,8 @@ public class MainActivity extends AppCompatActivity
         // [START maps_check_location_permission]
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            if (mMap != null) {
-                mMap.setMyLocationEnabled(true);
-            }
-
-            mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-            mFusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
-                                mLocation = location;
-                            }
-                        }
-                    });
+            getLastKnownOrLatestLocation();
+            //mMap.setMyLocationEnabled(true);
 
         } else {
             // Permission to access the location is missing. Show rationale and request permission
@@ -575,9 +564,28 @@ public class MainActivity extends AppCompatActivity
         // [END maps_check_location_permission]
     }
 
+    private void getLastKnownOrLatestLocation() {
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        mFusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            Log.e(TAG, "Fused Location : " + location.toString());
+                            mLocation = location;
+                        }
+                    }
+                });
+    }
+
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "Taking you to your current location", Toast.LENGTH_SHORT).show();
+        Toast toast = Toast.makeText(MainActivity.this, "Taking you to your current location.",
+                Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.BOTTOM, 0, 500);
+        toast.show();
+
         // Return false so that we don't consume the event and the default behavior still occurs
         // (the camera animates to the user's current position).
         return false;
@@ -585,7 +593,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location.getLatitude() + ", " + location.getLongitude() + ",\nTimestamp: " + location.getTime(), Toast.LENGTH_LONG).show();
+        Toast toast_error = Toast.makeText(this, "Your current location :\n " + location.getLatitude() + ", " + location.getLongitude() + ", \nTime: " + new Date(location.getTime()), Toast.LENGTH_LONG);
+        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+        toast_error.show();
+
     }
 
 }

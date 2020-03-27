@@ -1,4 +1,4 @@
-package com;
+package com.service;
 
 import android.graphics.Color;
 import android.util.Log;
@@ -7,6 +7,8 @@ import com.domain.OperationResponse;
 import com.domain.ResponseMapDataObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
@@ -65,10 +67,16 @@ public class GenerateHeatMap {
 
         }
 
+        try {
+            fluList = readFluItemsWT();
+            covid19List = readCovidItemsWT();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         Gradient fluGradient = new Gradient(fluColors, startPoints);
         Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
 
-        //resetMapUI();
         if(!fluList.isEmpty()) {
             HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
                     .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
@@ -85,6 +93,12 @@ public class GenerateHeatMap {
             mCovid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
             mCovid19TileOverlay.setVisible(true);
         }
+
+        Circle circle = pMap.addCircle(new CircleOptions()
+                .center(new LatLng(57.708870, 11.974540))
+                .radius(50)
+                .strokeColor(Color.BLUE)
+                .fillColor(Color.RED));
 
     }
 
@@ -118,12 +132,6 @@ public class GenerateHeatMap {
             0.2f, 0.8f, 0.9f, 1.0f
     };
 
-    public  void resetMapUI() {
-        if(null != mCovid19TileOverlay)
-            mCovid19TileOverlay.remove();
-        if(null != mFluTileOverlay)
-            mFluTileOverlay.remove();
-    }
 
     /**
      * Test data
@@ -192,6 +200,74 @@ public class GenerateHeatMap {
             double lat = object.getDouble("lat");
             double lng = object.getDouble("lng");
             list.add(new LatLng(lat, lng));
+        }
+        return list;
+    }
+
+    private ArrayList<WeightedLatLng> readCovidItemsWT() throws JSONException {
+        ArrayList<WeightedLatLng> list = new ArrayList<>();
+        String json = "[\n" +
+                "   {\n" +
+                "      \"lat\":57.70,\n" +
+                "      \"lng\":11.97\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.70,\n" +
+                "      \"lng\":11.97\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.70,\n" +
+                "      \"lng\":11.97\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.70,\n" +
+                "      \"lng\":11.97\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.708870,\n" +
+                "      \"lng\":11.974540\n" +
+                "   }\n" +
+                "]";
+        JSONArray array = new JSONArray(json);
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject object = array.getJSONObject(i);
+            double lat = object.getDouble("lat");
+            double lng = object.getDouble("lng");
+            list.add(new WeightedLatLng(new LatLng(lat, lng), 10));
+        }
+        return list;
+    }
+
+    private ArrayList<WeightedLatLng> readFluItemsWT() throws JSONException {
+        ArrayList<WeightedLatLng> list = new ArrayList<>();
+        String json = "[\n" +
+                "   {\n" +
+                "      \"lat\":57.708870,\n" +
+                "      \"lng\":11.975560\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.708860,\n" +
+                "      \"lng\":11.974660\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.708870,\n" +
+                "      \"lng\":11.974750\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.708840,\n" +
+                "      \"lng\":11.978560\n" +
+                "   },\n" +
+                "   {\n" +
+                "       \"lat\":57.708870,\n" +
+                "      \"lng\":11.979540\n" +
+                "   }\n" +
+                "]";
+        JSONArray array = new JSONArray(json);
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject object = array.getJSONObject(i);
+            double lat = object.getDouble("lat");
+            double lng = object.getDouble("lng");
+            list.add(new WeightedLatLng(new LatLng(lat, lng), 10));
         }
         return list;
     }
