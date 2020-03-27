@@ -42,7 +42,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:text="@string/symptoms"
-                    android:id="@+id/symptoms"/>
+                    android:id="@+id/symptoms"
+                    android:onClick="onFluSymptomsClicked"/>
 
                 <LinearLayout
                     android:id="@+id/inputCheckbox"
@@ -106,7 +107,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:text="@string/covid19"
-                    android:id="@+id/covid19"/>
+                    android:id="@+id/covid19"
+                    android:onClick="onCovid19Clicked"/>
             </RadioGroup>
 
             <Button

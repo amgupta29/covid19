@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -35,7 +34,6 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.domain.RequestDataObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
@@ -47,7 +45,6 @@ import com.google.android.material.snackbar.Snackbar;
 import com.service.LocationUpdatesService;
 import com.service.MapDataProcessor;
 import com.utils.PermissionUtils;
-import com.utils.PrefManager;
 import com.utils.Utils;
 
 import java.util.ArrayList;
@@ -66,7 +63,7 @@ public class MainActivity extends AppCompatActivity
 
     // UI elements.
     private Button mUpdatesButton, mStopButton, mHealthy, mReloadButton;
-    private LinearLayout mStopButtonPanel, mInputPanel;
+    private LinearLayout mStopButtonPanel, mInputPanel, mInputCheckBoxPanel;
     private RadioButton mCovid19, mSymptom;
     private CheckBox mCough, mFever, mSoreThroat, mBreathless, mChestPain, mWeakness, mDiahorrea;
     private RadioGroup mRadioGroup;
@@ -386,10 +383,11 @@ public class MainActivity extends AppCompatActivity
         mDiahorrea = (CheckBox) findViewById(R.id.diahorrea);
         mCovid19 = (RadioButton) findViewById(R.id.covid19);
         mReloadButton = (Button) findViewById(R.id.reloadButton);
+        mInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
 
         resetUI();
 
-        mRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        /*mRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 if (checkedId == R.id.symptoms) {
@@ -403,7 +401,7 @@ public class MainActivity extends AppCompatActivity
                 }
                 mUpdatesButton.setEnabled(true);
             }
-        });
+        });*/
 
     }
 
@@ -413,7 +411,6 @@ public class MainActivity extends AppCompatActivity
         mCough.setChecked(false);
         mFever.setChecked(false);
         mSoreThroat.setChecked(false);
-        mBreathless.setChecked(false);
         mBreathless.setChecked(false);
         mChestPain.setChecked(false);
         mWeakness.setChecked(false);
@@ -471,6 +468,37 @@ public class MainActivity extends AppCompatActivity
                 }
                 break;
         }
+
+
+    }
+
+    public void onCovid19Clicked(View v) {
+        mCovid19.setChecked(true);
+
+
+        mInputCheckBoxPanel.setVisibility(View.GONE);
+        mSymptom.setChecked(false);
+        mCough.setChecked(false);
+        mFever.setChecked(false);
+        mSoreThroat.setChecked(false);
+        mBreathless.setChecked(false);
+        mBreathless.setChecked(false);
+        mChestPain.setChecked(false);
+        mWeakness.setChecked(false);
+        mDiahorrea.setChecked(false);
+
+        mUpdatesButton.setEnabled(true);
+
+    }
+
+    public void onFluSymptomsClicked(View v) {
+        //mSymptom.setSelected(true);
+        mSymptom.setChecked(true);
+        mInputCheckBoxPanel.setVisibility(View.VISIBLE);
+
+        mCovid19.setChecked(false);
+
+        mUpdatesButton.setEnabled(true);
     }
 
     private RequestDataObject prepareOutboundData() {
@@ -482,8 +510,8 @@ public class MainActivity extends AppCompatActivity
         requestDataObject.setLocation(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
         requestDataObject.setTimestamp(System.currentTimeMillis());
 
-        if (mCovid19 != null && mCovid19.isSelected()) {
-            diagnosesList.add(mCovid19.getText().toString());
+        if (mCovid19 != null && mCovid19.isChecked()) {
+            diagnosesList.add("Covid19 Positive");
         }
 
         if (mSymptom != null && mSymptom.isChecked()) {

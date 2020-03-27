@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "symptom-fever",
         "diagnosis-influenze",
         "timestamp",
-        "diagnosis-covid-19",
+        "diagnosis-Covid-19-Positive",
         "diagnosis-Flu-Symptoms",
         "symptom-Feeling-breathless",
         "symptom-Persistent-pain-or-pressure-in-chest",
@@ -40,7 +40,7 @@ public class Value {
     private Boolean diagnosisInfluenze;
     @JsonProperty("timestamp")
     private Long timestamp;
-    @JsonProperty("diagnosis-covid-19")
+    @JsonProperty("diagnosis-Covid19-Positive")
     private Boolean diagnosisCovid19;
     @JsonProperty("diagnosis-Flu-Symptoms")
     private Boolean diagnosisFluSymptoms;
@@ -123,12 +123,12 @@ public class Value {
         this.timestamp = timestamp;
     }
 
-    @JsonProperty("diagnosis-covid-19")
+    @JsonProperty("diagnosis-Covid19-Positive")
     public Boolean getDiagnosisCovid19() {
         return diagnosisCovid19;
     }
 
-    @JsonProperty("diagnosis-covid-19")
+    @JsonProperty("diagnosis-Covid19-Positive")
     public void setDiagnosisCovid19(Boolean diagnosisCovid19) {
         this.diagnosisCovid19 = diagnosisCovid19;
     }

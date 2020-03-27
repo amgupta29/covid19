@@ -86,18 +86,6 @@ public class LocationUpdatesService extends Service {
     private final IBinder mBinder = new LocalBinder();
 
     /**
-     * The desired interval for location updates. Inexact. Updates may be more or less frequent.
-     */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
-
-    /**
-     * The fastest rate for active location updates. Updates will never be more frequent
-     * than this value.
-     */
-    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
-            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
-
-    /**
      * The identifier for the notification displayed for the foreground service.
      */
     private static final int NOTIFICATION_ID = 12345678;
@@ -136,6 +124,18 @@ public class LocationUpdatesService extends Service {
     private MapDataProcessor mMapDataProcessor = new MapDataProcessor();
 
     private RequestDataObject mRequestDataObject;
+
+    /**
+     * The desired interval for location updates. Inexact. Updates may be more or less frequent.
+     */
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 60000;
+
+    /**
+     * The fastest rate for active location updates. Updates will never be more frequent
+     * than this value.
+     */
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
+            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
 
     public LocationUpdatesService() {
     }

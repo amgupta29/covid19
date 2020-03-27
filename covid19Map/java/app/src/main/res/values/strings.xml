@@ -26,15 +26,15 @@
     <string name="accept">Accept</string>
     <string name="cancel">Cancel</string>
     <string name="salutation"><b>Hi Friends!</b></string>
-    <string name="welcome_text">\n Thank you for downloading this app!. It feels good to know that you care about the situation and is taking the responsibility to work for it. The app shows the people who has marked themselves within a radius of 100 meters which is small enough to tell the area you should avoid while being big enough to keep them anonymous.\n
+    <string name="welcome_text">\n Thank you for downloading this app!. It feels good to know that you care about the situation and are taking the responsibility to work for it. The app shows the people who has marked themselves within a radius of 100 meters which is small enough to tell the area you should avoid at the same time it is big enough to keep them anonymous.\n
         \n Worried about your data? : \n
         * We do not take any data from you that can be traced back to you.
         <br>\n\n How does it work? : \n</br>
-        * The app shows the location of people who has marked themselves as COVID19 infected in a RED color circle. \n
-        * The app shows the location of people who has marked themselves as Flu infected in a YELLOW color circle. \n
+        * The app shows the location of people who have marked themselves as COVID19 infected in a RED color circle. \n
+        * The app shows the location of people who have marked themselves as Flu infected in a YELLOW color circle. \n
         * The app updates the location every 30 mins if you have marked yourself. \n
     </string>
-    <string name="summary">So In a nut shell this app shows "Someone(anonymous) who has flu symptoms or covid19 was at that place atleast 30 mins ago. \n Please ue this responsibly. We all depend on you."</string>
+    <string name="summary">So In a nut shell this app shows "Someone(anonymous) who has flu symptoms or covid19 was at that place atleast 30 mins ago. \nPlease use this responsibly. We all depend on you."</string>
     <string name="consent"> \n Pressing accept button means accepting the terms and conditions.</string>
     <string name="terms_and_conditions"> \n <a href="https://www.google.com">Terms and conditions</a></string>
 </resources>

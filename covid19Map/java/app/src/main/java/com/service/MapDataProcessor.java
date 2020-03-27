@@ -21,6 +21,7 @@ import org.json.JSONObject;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapDataProcessor {
 
@@ -28,15 +29,20 @@ public class MapDataProcessor {
     private String getDataUrl_POST ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapGet";
     private String sendDataUrl_PUT = "https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
     private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
+    private Double mRadius_km = 10d;
+    private Double mTimespan_min = 2d;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void getMapData(Context pContext, final GoogleMap pMap, Location pLocation) {
         Log.e(TAG, "context : "+pContext);
+        AtomicBoolean mMapData = new AtomicBoolean(false);
 
         CustomLocation customLocation = new CustomLocation();
         com.domain.Location location = new com.domain.Location();
         location.setLongitude(pLocation.getLongitude());
         location.setLatitude(pLocation.getLatitude());
+        location.setTimespan(mTimespan_min);
+        location.setRadius(mRadius_km);
         customLocation.setLocation(location);
 
         Gson gson = new Gson();
@@ -54,10 +60,10 @@ public class MapDataProcessor {
         }
 
         // Request a string response from the provided URL.
+        Log.e(TAG, "getMapData(), POST_REQUEST_OBJECT : " + postparams);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                 (Request.Method.POST, getDataUrl_POST, postparams, response -> {
-                    Log.e(TAG, "getMapData(), POST_REQUEST_OBJECT : " + response.toString());
-                    mGenerateHeatMap.addHeatMap(response.toString(), pMap);
+                    mMapData.set(mGenerateHeatMap.addHeatMap(response.toString(), pMap));
 
                 }, error -> {
                     StringWriter sw = new StringWriter();
@@ -69,6 +75,11 @@ public class MapDataProcessor {
         // Add the request to the RequestQueue.
         RequestQueueSingleton.getInstance(pContext).addToRequestQueue(jsonObjectRequest);
 
+        /*if (new AtomicBoolean(true) == mMapData) {
+
+        } else {
+
+        }*/
         Toast toast = Toast.makeText(pContext, "Map is loading...",
                 Toast.LENGTH_LONG);
         toast.setGravity(Gravity.BOTTOM, 0, 400);
