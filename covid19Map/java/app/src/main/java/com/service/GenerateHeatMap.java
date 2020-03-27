@@ -1,7 +1,10 @@
 package com.service;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import com.domain.OperationResponse;
 import com.domain.ResponseMapDataObject;
@@ -12,6 +15,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.gson.Gson;
 import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
@@ -28,9 +32,11 @@ import java.util.List;
 
 public class GenerateHeatMap {
 
+    private static final String TAG = MapDataProcessor.class.getSimpleName();
     public  TileOverlay mCovid19TileOverlay;
     public  TileOverlay mFluTileOverlay;
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public  void addHeatMap(String mapData, GoogleMap pMap) {
         ObjectMapper objectMapper = new ObjectMapper();
         ResponseMapDataObject responseMapDataObject = null;
@@ -43,23 +49,26 @@ public class GenerateHeatMap {
             Log.e("MAP_DATA_EXCEPTION", sw.toString());
         }
 
-        List<WeightedLatLng> fluList = new ArrayList<>();
-        List<WeightedLatLng> covid19List = new ArrayList<>();
+        List<LatLng> fluList = new ArrayList<>();
+        List<LatLng> covid19List = new ArrayList<>();
 
         List<OperationResponse> operationResponseList = responseMapDataObject.getOperationResponse();
+        Gson gson = new Gson();
+        String post_response = gson.toJson(operationResponseList);
+        Log.e(TAG, "addHeatMap(), POST_RESPONSE : "+post_response);
         for (OperationResponse operationResponseListObj:
         operationResponseList) {
             if(operationResponseListObj != null) {
                 LatLng latLng = new LatLng(operationResponseListObj.getValue().getLatitude(), operationResponseListObj.getValue().getLongitude());
-                WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
+                //WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
 
                 if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
                     //covid19List.add(latLng);
-                    covid19List.add(weightedLatLng);
-                    Log.d("COVID19_DATA", fluList.toString());
+                    covid19List.add(latLng);
+                    Log.d("COVID19_DATA", covid19List.toString());
                 } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
 //              fluList.add(latLng);
-                    fluList.add(weightedLatLng);
+                    fluList.add(latLng);
                     Log.d("FLU_DATA", fluList.toString());
 
                 }
@@ -67,17 +76,17 @@ public class GenerateHeatMap {
 
         }
 
-        try {
-            fluList = readFluItemsWT();
-            covid19List = readCovidItemsWT();
+        /*try {
+            fluList = readFluItems();
+            covid19List = readCovidItems();
         } catch (JSONException e) {
             e.printStackTrace();
-        }
+        }*/
 
         Gradient fluGradient = new Gradient(fluColors, startPoints);
         Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
 
-        if(!fluList.isEmpty()) {
+      /*  if(!fluList.isEmpty()) {
             HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
                     .weightedData(fluList).gradient(fluGradient).radius(50).opacity(1).maxIntensity(10)
                     .build();
@@ -92,13 +101,25 @@ public class GenerateHeatMap {
             // Add a tile overlay to the map, using the heat map tile provider.
             mCovid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
             mCovid19TileOverlay.setVisible(true);
-        }
+        }*/
 
-        Circle circle = pMap.addCircle(new CircleOptions()
-                .center(new LatLng(57.708870, 11.974540))
-                .radius(50)
-                .strokeColor(Color.BLUE)
-                .fillColor(Color.RED));
+        fluList.stream().forEach((LatLng location) -> {
+            Circle circle = pMap.addCircle(new CircleOptions()
+                    .center(location/*new LatLng(57.708870, 11.974540)*/)
+                    .radius(100)
+                    .strokeColor(Color.BLUE)
+                    .fillColor(Color.YELLOW));
+            //System.out.println(name);
+        });
+
+        covid19List.stream().forEach((LatLng location) -> {
+            Circle circle = pMap.addCircle(new CircleOptions()
+                    .center(location/*new LatLng(57.708870, 11.974540)*/)
+                    .radius(100)
+                    .strokeColor(Color.BLUE)
+                    .fillColor(Color.RED));
+            //System.out.println(name);
+        });
 
     }
 

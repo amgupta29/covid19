@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -27,6 +28,7 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -160,9 +162,6 @@ public class MainActivity extends AppCompatActivity
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
             if (location != null) {
-                /*Toast.makeText(MainActivity.this, Utils.getLocationText(location),
-                        Toast.LENGTH_SHORT).show();*/
-
                 mLocation = mCurrentLocation = location;
                 mRequestDataObject = prepareOutboundData();
                 mService.initialiseDataObject(mRequestDataObject);
@@ -170,6 +169,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onStart() {
         Log.e(TAG, "onStart");
@@ -219,58 +219,50 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void onButtonActions() {
         if (mUpdatesButton != null) {
 
-            mUpdatesButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (!checkPermissions()) {
-                        requestPermissions();
-                    } else {
-                        mService.requestLocationUpdates();
-                        postMapData();
-                    }
+            mUpdatesButton.setOnClickListener(view -> {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    mService.requestLocationUpdates();
+                    postMapData();
                 }
             });
         }
 
         if (mHealthy != null) {
-            mHealthy.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    if (!checkPermissions()) {
-                        requestPermissions();
-                    } else {
-                        mService.requestLocationUpdates();
-                        postMapData();
-                    }
+            mHealthy.setOnClickListener(v -> {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    mService.requestLocationUpdates();
+                    postMapData();
                 }
             });
         }
 
         if (mReloadButton != null) {
 
-            mReloadButton.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    if (!checkPermissions()) {
-                        requestPermissions();
-                    } else {
-                        //mService.requestLocationUpdates();
-                        mMap.clear();
-                        postMapData();
-                    }
+            mReloadButton.setOnClickListener(v -> {
+                if (!checkPermissions()) {
+                    requestPermissions();
+                } else {
+                    //mService.requestLocationUpdates();
+                    mMap.clear();
+                    postMapData();
+                    //mMap.
                 }
             });
         }
 
         if (mStopButton != null) {
-            mStopButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    mService.removeLocationUpdates();
-                    mMap.clear();
-                    resetUI();
-                }
+            mStopButton.setOnClickListener(view -> {
+                mService.removeLocationUpdates();
+                mMap.clear();
+                resetUI();
             });
         }
 
@@ -278,11 +270,12 @@ public class MainActivity extends AppCompatActivity
         setButtonsState(Utils.requestingLocationUpdates(this));
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void postMapData() {
         if (mLocation != null) {
             mMapDataProcessor.getMapData(mContext, mMap, mLocation);
         } else {
-            Toast toast_error = Toast.makeText(MainActivity.this, "Unable to get your location. Please try again.",
+            Toast toast_error = Toast.makeText(MainActivity.this, "Unable to get your location, please turn your location service on and try again.",
                     Toast.LENGTH_LONG);
             toast_error.setGravity(Gravity.BOTTOM, 0, 500);
             toast_error.show();
