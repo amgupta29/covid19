@@ -6,18 +6,19 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.domain.Location;
 import com.domain.OperationResponse;
 import com.domain.ResponseMapDataObject;
+import com.domain.Value;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
-import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.gson.Gson;
 import com.google.maps.android.heatmaps.Gradient;
-import com.google.maps.android.heatmaps.HeatmapTileProvider;
 import com.google.maps.android.heatmaps.WeightedLatLng;
 
 import org.json.JSONArray;
@@ -28,7 +29,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GenerateHeatMap {
 
@@ -55,25 +58,41 @@ public class GenerateHeatMap {
         List<OperationResponse> operationResponseList = responseMapDataObject.getOperationResponse();
         Gson gson = new Gson();
         String post_response = gson.toJson(operationResponseList);
-        Log.e(TAG, "addHeatMap(), POST_RESPONSE : "+post_response);
+        Log.e(TAG, "addHeatMap(), POST_RESPONSE : "+"; size : "+operationResponseList.size()+ "; "+post_response);
+
+        Map<String, Value> singlePointData = new HashMap<>();
+        for (OperationResponse operationResponseListObj:
+                operationResponseList) {
+            if (singlePointData.containsKey(operationResponseListObj.getUuid())) {
+                if (singlePointData.get(operationResponseListObj.getUuid()).getTimestamp() < Double.parseDouble(operationResponseListObj.getSubmissionDate())) {
+                    singlePointData.put(operationResponseListObj.getUuid(),
+                            createValueObject(operationResponseListObj));
+                }
+            }
+            singlePointData.put(operationResponseListObj.getUuid(), createValueObject(operationResponseListObj));
+            Log.e("PUT_IN_MAP", toString(operationResponseListObj) + ", size : "+singlePointData.size());
+        }
+
+        //System.out.println("q34t4t43g4rg45t4g45g " + singlePointData);
+
         if(!post_response.isEmpty()) {
-            for (OperationResponse operationResponseListObj:
-                    operationResponseList) {
-                if(operationResponseListObj != null) {
-                    LatLng latLng = new LatLng(operationResponseListObj.getValue().getLatitude(), operationResponseListObj.getValue().getLongitude());
+            for (Map.Entry<String, Value> singlePointDataObj:
+                    singlePointData.entrySet()) {
+                    LatLng latLng = new LatLng(singlePointDataObj.getValue().getLatitude(), singlePointDataObj.getValue().getLongitude());
                     //WeightedLatLng weightedLatLng = new WeightedLatLng(latLng,10);
 
-                    if(operationResponseListObj.getValue().getDiagnosisCovid19() != null && operationResponseListObj.getValue().getDiagnosisCovid19()) {
+                    if(singlePointDataObj.getValue().getDiagnosisCovid19() != null && singlePointDataObj.getValue().getDiagnosisCovid19()) {
                         //covid19List.add(latLng);
                         covid19List.add(latLng);
-                        Log.d("COVID19_DATA", covid19List.toString());
-                    } else if(operationResponseListObj.getValue().getDiagnosisFluSymptoms() != null && (operationResponseListObj.getValue().getDiagnosisFluSymptoms() || operationResponseListObj.getValue().getDiagnosisInfluenze())) {
+                        Log.d("COVID19_DATA", covid19List.toString() +";"+singlePointDataObj.getKey()+"; "+ singlePointDataObj.getValue().getTimestamp());
+                    } else if(singlePointDataObj.getValue().getDiagnosisFluSymptoms() != null && singlePointDataObj.getValue().getDiagnosisFluSymptoms()) {
         //              fluList.add(latLng);
                         fluList.add(latLng);
-                        Log.d("FLU_DATA", fluList.toString());
+                        Log.d("FLU_DATA", fluList.toString() +"; "+singlePointDataObj.getKey()+"; "+ singlePointDataObj.getValue().getTimestamp());
 
                     }
                 }
+            Log.e("LIST_SIZE", covid19List.size() +"; "+fluList.size());
 
             }
 
@@ -83,6 +102,11 @@ public class GenerateHeatMap {
                         .radius(100)
                         .strokeColor(Color.BLUE)
                         .fillColor(Color.YELLOW));
+
+                pMap.addMarker(new MarkerOptions()
+                        .position(location)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+
             });
 
             covid19List.stream().forEach((LatLng location) -> {
@@ -91,11 +115,38 @@ public class GenerateHeatMap {
                         .radius(100)
                         .strokeColor(Color.BLUE)
                         .fillColor(Color.RED));
+
+                pMap.addMarker(new MarkerOptions()
+                        .position(location)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             });
 
             return true;
         }
 
+    private Value createValueObject(OperationResponse operationResponseListObj) {
+        boolean flu = false, covid = false;
+        if(null != operationResponseListObj.getValue().getDiagnosisCovid19()) {
+            covid = operationResponseListObj.getValue().getDiagnosisCovid19();
+        }
+
+        if(null != operationResponseListObj.getValue().getDiagnosisFluSymptoms()) {
+            flu = operationResponseListObj.getValue().getDiagnosisFluSymptoms();
+        }
+
+        return new Value(operationResponseListObj.getValue().getLongitude(),
+                operationResponseListObj.getValue().getLatitude(),
+                operationResponseListObj.getValue().getTimestamp(),
+                covid,
+                flu);
+    }
+
+    private String toString(OperationResponse obj) {
+        return obj.getUuid() + " ; " +obj.getValue().getLatitude() +" ; "+
+                obj.getValue().getTimestamp() +" ; "+
+                obj.getValue().getDiagnosisCovid19() +" ; "+
+                obj.getValue().getDiagnosisFluSymptoms();
+    }
 
         /*try {
             fluList = readFluItems();
@@ -104,8 +155,8 @@ public class GenerateHeatMap {
             e.printStackTrace();
         }*/
 
-        Gradient fluGradient = new Gradient(fluColors, startPoints);
-        Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
+        //Gradient fluGradient = new Gradient(fluColors, startPoints);
+        //Gradient covid19Gradient = new Gradient(covid19Colors, startPoints);
 
       /*  if(!fluList.isEmpty()) {
             HeatmapTileProvider fluProvider = new HeatmapTileProvider.Builder()
@@ -123,8 +174,8 @@ public class GenerateHeatMap {
             mCovid19TileOverlay = pMap.addTileOverlay(new TileOverlayOptions().tileProvider(covid19Provider));
             mCovid19TileOverlay.setVisible(true);
         }*/
-        return false;
-    }
+        //return false;
+    //}
 
     // Create the gradient.
     private  int[] covid19Colors = {

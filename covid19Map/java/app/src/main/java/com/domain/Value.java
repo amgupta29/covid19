@@ -53,6 +53,18 @@ public class Value {
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
+    public Value(Double longitude, Double latitude, Long timestamp, boolean diagnosisCovid19, boolean diagnosisFluSymptoms) {
+        this.longitude = longitude;
+        this.latitude = latitude;
+        this.timestamp = timestamp;
+        this.diagnosisCovid19 = diagnosisCovid19;
+        this.diagnosisFluSymptoms = diagnosisFluSymptoms;
+    }
+
+    public Value() {
+
+    }
+
     @JsonProperty("symptom-cough")
     public Boolean getSymptomCough() {
         return symptomCough;
