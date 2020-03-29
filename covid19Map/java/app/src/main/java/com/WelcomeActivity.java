@@ -58,7 +58,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
             Toast toast = Toast.makeText(WelcomeActivity.this, "Touch anywhere on the screen to dismiss.",
                     Toast.LENGTH_SHORT);
-            toast.setGravity(Gravity.TOP, 0, 200);
+            toast.setGravity(Gravity.BOTTOM, 0, 200);
             toast.show();
 
             // dismiss the popup window when touched

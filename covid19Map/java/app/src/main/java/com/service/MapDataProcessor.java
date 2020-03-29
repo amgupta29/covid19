@@ -31,7 +31,7 @@ public class MapDataProcessor {
     private String sendDataUrl_PUT = "https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
     private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
     private Double mRadius_km = 1000d;
-    private Double mTimeSpan_min = 5d;
+    private Double mTimeSpan_min = 20d;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void getMapData(Context pContext, final GoogleMap pMap, Location pLocation) {

@@ -26,15 +26,45 @@
     <string name="accept">Accept</string>
     <string name="cancel">Cancel</string>
     <string name="salutation"><b>Hi Friends!</b></string>
-    <string name="welcome_text">\n Thank you for downloading this app!. It feels good to know that you care about the situation and are taking the responsibility to work for it. The app shows the people who has marked themselves within a radius of 100 meters which is small enough to tell the area you should avoid at the same time it is big enough to keep them anonymous.\n
+    <string name="welcome_text">\n Thank you for downloading this app!.
+        It feels good to know that you care about the situation and are taking the responsibility
+        to work for it. The app shows the people who has marked themselves within a radius of 100
+        meters which is small enough to tell the area you should avoid at the same time it is big
+        enough to keep them anonymous.\n
         \n Worried about your data? : \n
         * We do not take any data from you that can be traced back to you.
+        * We do not store any data longer than needed to compute information for this app.
         <br>\n\n How does it work? : \n</br>
-        * The app shows the location of people who have marked themselves as COVID19 infected in a RED color circle. \n
-        * The app shows the location of people who have marked themselves as Flu infected in a YELLOW color circle. \n
-        * The app updates the location every 30 mins if you have marked yourself. \n
+        * The app shows the location of people who have marked themselves as COVID19 infected in a
+        RED color circle with a red marker. \n
+        * The app shows the location of people who have marked themselves as Flu infected in a
+        YELLOW color circle with an orange marker. \n
+        * The app updates the location every 10 mins if you have marked yourself.
     </string>
-    <string name="summary">So In a nut shell this app shows "Someone(anonymous) who has flu symptoms or covid19 was at that place atleast 30 mins ago. \nPlease use this responsibly. We all depend on you."</string>
-    <string name="consent"> \n Pressing accept button means accepting the terms and conditions.</string>
-    <string name="terms_and_conditions"> \n <a href="https://www.google.com">Terms and conditions</a></string>
+    <string name="summary">\nIn a nut shell this app shows an anonymous person who has flu symptoms
+        or covid19 was at that place atleast 10 mins ago. \nPlease use this responsibly. We all depend on you. \n"</string>
+    <string name="signature">\nKind regards, \n- Amrit\n</string>
+    <string name="consent"> \nPressing accept button means accepting the terms and conditions.</string>
+    <string name="terms_and_conditions"> \n <a href="">Terms and conditions</a></string>
+    <string name="terms">Data Policy\n
+
+\nGeneral Information\n
+1.The app is developed by Amrit and the platform is handled by Optagen Laboratories.\n
+2.Optagen Laboratories is responsible for ensuring that all user data is handled in accordance
+        with GDPR and other local laws.\n
+3.Optagen laboratories guarantees that no user specific data will be collected and sold to a
+        third party. You can read more about our ethical data handling policies here.\n
+
+\nRemote Storage\n
+1. The app and the platform retains only anonymous data for its computation.\n
+
+\nTerms of Use\n
+1.This Application may only be used to post location to inform people about the risk they have when
+        they come in the range.\n
+
+\nMisc.\n
+1.Your activities on this app should be in accordance with local law and regulations.\n
+2.Dissemination of illegal content will be reported to local law enforcement.\n
+3.We reserve the right to change and modify these terms of service in the future.</string>
+
 </resources>

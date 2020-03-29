@@ -7,7 +7,9 @@
     android:gravity="center_vertical"
     tools:context="com.WelcomeActivity">
 
-
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
     <LinearLayout
         android:id="@+id/welcomeLayout"
         android:layout_width="match_parent"
@@ -37,6 +39,15 @@
             android:layout_height="wrap_content"
             android:text="@string/summary"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/signature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autoLink="web"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/signature"/>
 
         <GridLayout
             android:id="@+id/gridLayoutButtons"
@@ -72,5 +83,6 @@
             android:text="@string/terms_and_conditions"/>
 
     </LinearLayout>
+    </ScrollView>
 
 </RelativeLayout>
