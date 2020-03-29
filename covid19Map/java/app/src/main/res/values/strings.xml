@@ -29,7 +29,7 @@
     <string name="welcome_text">\n Thank you for downloading this app!.
         It feels good to know that you care about the situation and are taking the responsibility
         to work for it. The app shows the people who has marked themselves within a radius of 100
-        meters which is small enough to tell the area you should avoid at the same time it is big
+        meters which is small enough to see the area you should avoid at the same time it is big
         enough to keep them anonymous.\n
         \n Worried about your data? : \n
         * We do not take any data from you that can be traced back to you.
@@ -39,10 +39,11 @@
         RED color circle with a red marker. \n
         * The app shows the location of people who have marked themselves as Flu infected in a
         YELLOW color circle with an orange marker. \n
-        * The app updates the location every 10 mins if you have marked yourself.
+        * The app updates the location every 10 mins if you have marked yourself.\n
+        * the range is set to 10 kms around you at the moment.
     </string>
     <string name="summary">\nIn a nut shell this app shows an anonymous person who has flu symptoms
-        or covid19 was at that place atleast 10 mins ago. \nPlease use this responsibly. We all depend on you. \n"</string>
+        or covid19 is at that place atleast for 10 mins from now. \nPlease use this responsibly. We all depend on you. \n"</string>
     <string name="signature">\nKind regards, \n- Amrit\n</string>
     <string name="consent"> \nPressing accept button means accepting the terms and conditions.</string>
     <string name="terms_and_conditions"> \n <a href="">Terms and conditions</a></string>

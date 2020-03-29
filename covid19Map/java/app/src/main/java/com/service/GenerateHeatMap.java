@@ -73,6 +73,8 @@ public class GenerateHeatMap {
             Log.e("PUT_IN_MAP", toString(operationResponseListObj) + ", size : " + singlePointData.size());
         }
 
+        System.out.println(singlePointData);
+
         if (!post_response.isEmpty()) {
             for (Map.Entry<String, Value> singlePointDataObj :
                     singlePointData.entrySet()) {

@@ -30,7 +30,7 @@ public class MapDataProcessor {
     private String getDataUrl_POST ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapGet";
     private String sendDataUrl_PUT = "https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
     private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
-    private Double mRadius_km = 1000d;
+    private Double mRadius_km = 10d;
     private Double mTimeSpan_min = 20d;
 
     @RequiresApi(api = Build.VERSION_CODES.N)

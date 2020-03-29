@@ -6,7 +6,7 @@ android {
     buildToolsVersion '28.0.3'
 
     defaultConfig {
-        applicationId "com.covid19"
+        applicationId "com.stopTheVirus"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1
@@ -48,6 +48,5 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:17.0.0'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'com.google.guava:guava:28.0-android'
-    implementation 'com.google.android.gms:play-services-ads-lite:11.8.0'
 
 }
