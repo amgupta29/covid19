@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import com.MainActivity;
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.domain.CustomLocation;
@@ -29,8 +30,8 @@ public class MapDataProcessor {
     private String getDataUrl_POST ="https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapGet";
     private String sendDataUrl_PUT = "https://3cwnx8b850.execute-api.eu-west-1.amazonaws.com/prod/open/heatmapNew";
     private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
-    private Double mRadius_km = 10d;
-    private Double mTimespan_min = 2d;
+    private Double mRadius_km = 1000d;
+    private Double mTimeSpan_min = 5d;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void getMapData(Context pContext, final GoogleMap pMap, Location pLocation) {
@@ -41,8 +42,8 @@ public class MapDataProcessor {
         com.domain.Location location = new com.domain.Location();
         location.setLongitude(pLocation.getLongitude());
         location.setLatitude(pLocation.getLatitude());
-        location.setTimespan(mTimespan_min);
-        location.setRadius(mRadius_km);
+        customLocation.setTimeSpan(mTimeSpan_min);
+        customLocation.setRadius(mRadius_km);
         customLocation.setLocation(location);
 
         Gson gson = new Gson();
@@ -64,7 +65,6 @@ public class MapDataProcessor {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                 (Request.Method.POST, getDataUrl_POST, postparams, response -> {
                     mMapData.set(mGenerateHeatMap.addHeatMap(response.toString(), pMap));
-
                 }, error -> {
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
@@ -87,9 +87,10 @@ public class MapDataProcessor {
     }
 
     public void sendRequest(RequestDataObject requestDataObject, Context context) {
+        requestDataObject.setTimestamp(System.currentTimeMillis());
         Gson gson = new Gson();
         String outBoundMessage = gson.toJson(requestDataObject);
-        Log.d(TAG,"sendRequest(), POST_REQUEST_OBJECT : " + outBoundMessage);
+        Log.e(TAG,"sendRequest(), POST_REQUEST_OBJECT : " + outBoundMessage);
 
         JSONObject postparams = null;
         try {

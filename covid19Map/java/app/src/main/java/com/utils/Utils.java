@@ -3,9 +3,18 @@ package com.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.util.Log;
+import android.widget.Toast;
+
+import androidx.ads.identifier.AdvertisingIdClient;
+import androidx.ads.identifier.AdvertisingIdInfo;
 
 import com.R;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -18,6 +27,7 @@ public class Utils {
     private static final String PREF_UNIQUE_ID = "PREF_UNIQUE_ID";
 
     public synchronized static String id(Context context) {
+
         if (uniqueID == null) {
             SharedPreferences sharedPrefs = context.getSharedPreferences(
                     PREF_UNIQUE_ID, Context.MODE_PRIVATE);
@@ -30,7 +40,10 @@ public class Utils {
             }
         }
         return uniqueID;
+
     }
+
+
 
     /**
      * Returns true if requesting location updates, otherwise returns false.

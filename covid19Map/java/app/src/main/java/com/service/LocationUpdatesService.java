@@ -150,8 +150,11 @@ public class LocationUpdatesService extends Service {
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
-                if (mRequestDataObject != null )
+                if (mRequestDataObject != null && mLocation != null) {
+                    mRequestDataObject.setLocation(new com.domain.Location(mLocation.getLatitude(),
+                            mLocation.getLongitude()));
                     mMapDataProcessor.sendRequest(mRequestDataObject, getApplicationContext());
+                }
 
             }
         };
@@ -169,7 +172,7 @@ public class LocationUpdatesService extends Service {
             CharSequence name = getString(R.string.app_name);
             // Create the channel for the notification
             NotificationChannel mChannel =
-                    new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW);
+                    new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_MIN);
 
             // Set the Notification Channel for the Notification Manager.
             mNotificationManager.createNotificationChannel(mChannel);
@@ -282,7 +285,8 @@ public class LocationUpdatesService extends Service {
     private Notification getNotification() {
         Intent intent = new Intent(this, LocationUpdatesService.class);
 
-        CharSequence text = Utils.getLocationText(mLocation);
+        //CharSequence text = Utils.getLocationText(mLocation);
+        CharSequence text = "Let's fight this together!";
 
         // Extra to help us figure out if we arrived in onStartCommand via the notification or not.
         intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true);
@@ -298,14 +302,14 @@ public class LocationUpdatesService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .addAction(R.drawable.ic_launch, getString(R.string.launch_activity),
                         activityPendingIntent)
-                .addAction(R.drawable.ic_cancel, getString(R.string.remove_location_updates),
-                        servicePendingIntent)
-                .setContentText(text)
-                .setContentTitle(Utils.getLocationTitle(this))
+                //.addAction(R.drawable.ic_cancel, getString(R.string.remove_location_updates),
+                  //      servicePendingIntent)
+                //.setContentText(text)
+                //.setContentTitle(Utils.getLocationTitle(this))
                 .setOngoing(true)
                 .setPriority(Notification.VISIBILITY_SECRET)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setTicker(text)
+                .setSmallIcon(R.mipmap.ic_launcher_covid19_round)
+                //.setTicker(text)
                 .setWhen(System.currentTimeMillis());
 
         // Set the Channel ID for Android O.

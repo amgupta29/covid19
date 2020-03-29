@@ -11,7 +11,7 @@ public class RequestDataObject {
     List<String> symptoms;
     List<String> diagnoses;
     long timestamp;
-    LatLng location;
+    Location location;
 
     public String getId() {
         return id;
@@ -29,11 +29,11 @@ public class RequestDataObject {
         this.timestamp = timestamp;
     }
 
-    public LatLng getLocation() {
+    public Location getLocation() {
         return location;
     }
 
-    public void setLocation(LatLng location) {
+    public void setLocation(Location location) {
         this.location = location;
     }
 

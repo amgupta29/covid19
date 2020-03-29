@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">COVID19 map</string>
+    <string name="app_name">Stop the virus</string>
     <string name="play_services_not_installed">Google Play services is not installed on this device.</string>
 
     <!--    Permissions    -->

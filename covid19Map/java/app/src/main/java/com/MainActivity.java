@@ -34,19 +34,23 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.domain.RequestDataObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.Gson;
 import com.service.LocationUpdatesService;
 import com.service.MapDataProcessor;
 import com.utils.PermissionUtils;
 import com.utils.Utils;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -72,6 +76,7 @@ public class MainActivity extends AppCompatActivity
     private GoogleMap mMap;
     private Location mCurrentLocation, mLocation;
     private FusedLocationProviderClient mFusedLocationClient;
+    private String mId = "";
 
 
     //private GenerateHeatMap mGenerateHeatMap = new GenerateHeatMap();
@@ -87,6 +92,10 @@ public class MainActivity extends AppCompatActivity
     // Tracks the bound state of the service.
     private boolean mBound = false;
 
+    //ObjectMapper objectMapper = new ObjectMapper();
+
+    Gson gson = new Gson();
+
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -95,6 +104,26 @@ public class MainActivity extends AppCompatActivity
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
+
+            SharedPreferences sharedPrefs = mContext.getSharedPreferences(
+                    "RequestDataObject", Context.MODE_PRIVATE);
+            if(null != sharedPrefs.getString("RequestDataObject", null)){
+                String dataString = sharedPrefs.getString("RequestDataObject", null);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    mRequestDataObject = objectMapper.readValue(dataString, RequestDataObject.class);
+                } catch (IOException e) {
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+                    Log.e(TAG, "onServiceConnected(), PARSING_EXCEPTION : " + sw.toString());
+                }
+
+                //.initialiseDataObject(mRequestDataObject);
+
+                Log.e(TAG, "onServiceConnected : "+mRequestDataObject);
+            }
         }
 
         @Override
@@ -109,10 +138,13 @@ public class MainActivity extends AppCompatActivity
         Log.e(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         mContext = getApplicationContext();
+        mId = Utils.id(mContext);
         setContentView(R.layout.syptoms_heatmap);
         restartMapInitialise();
 
         UIInitialisation();
+
+        Log.e("ID", mId);
 
         // Check that the user hasn't revoked permissions by going to Settings.
         if (Utils.requestingLocationUpdates(this)) {
@@ -124,6 +156,7 @@ public class MainActivity extends AppCompatActivity
         myReceiver = new MyReceiver();
         mMapDataProcessor = new MapDataProcessor();
         mRequestDataObject = new RequestDataObject();
+
 
     }
 
@@ -160,7 +193,7 @@ public class MainActivity extends AppCompatActivity
             Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
             if (location != null) {
                 mLocation = mCurrentLocation = location;
-                mRequestDataObject = prepareOutboundData();
+                //mRequestDataObject = prepareOutboundData();
                 mService.initialiseDataObject(mRequestDataObject);
             }
         }
@@ -182,11 +215,11 @@ public class MainActivity extends AppCompatActivity
                 Context.BIND_AUTO_CREATE);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onResume() {
         Log.e(TAG, "onResume");
         super.onResume();
-        //buttonListenerActions();
         LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
                 new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
     }
@@ -197,6 +230,16 @@ public class MainActivity extends AppCompatActivity
         //buttonListenerActions();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
+
+        SharedPreferences sharedPrefs = mContext.getSharedPreferences(
+                "RequestDataObject", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString("RequestDataObject", gson.toJson(mRequestDataObject));
+        editor.commit();
+
+        //mService.initialiseDataObject(mRequestDataObject);
+        Log.e(TAG, "onPause : "+mRequestDataObject);
+
     }
 
     @Override
@@ -225,7 +268,29 @@ public class MainActivity extends AppCompatActivity
                     requestPermissions();
                 } else {
                     mService.requestLocationUpdates();
-                    postMapData();
+                    getLastKnownOrLatestLocation();
+                    if(mLocation != null) {
+                        mRequestDataObject = prepareOutboundData();
+                        mMapDataProcessor.sendRequest(mRequestDataObject, mContext);
+
+                        mService.initialiseDataObject(mRequestDataObject);
+
+                        /*Toast toast_error = Toast.makeText(MainActivity.this, "Updating your details...",
+                                Toast.LENGTH_LONG);
+                        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+                        toast_error.show();*/
+                        postMapData();
+
+                    } else if(mRequestDataObject.getId() == null) {
+                        Toast toast_error = Toast.makeText(MainActivity.this,
+                                "Error getting your location please try again.",
+                                Toast.LENGTH_LONG);
+                        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+                        toast_error.show();
+
+                        mService.removeLocationUpdates();
+                        resetUI();
+                        }
                 }
             });
         }
@@ -236,7 +301,31 @@ public class MainActivity extends AppCompatActivity
                     requestPermissions();
                 } else {
                     mService.requestLocationUpdates();
-                    postMapData();
+                    getLastKnownOrLatestLocation();
+                    if(mLocation != null) {
+                        mRequestDataObject = prepareOutboundData();
+                        mMapDataProcessor.sendRequest(mRequestDataObject, mContext);
+
+                        mService.initialiseDataObject(mRequestDataObject);
+
+                        /*Toast toast_error = Toast.makeText(MainActivity.this, "Updating your details...",
+                                Toast.LENGTH_LONG);
+                        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+                        toast_error.show();*/
+
+                        postMapData();
+                    } else if(mRequestDataObject.getId() == null) {
+                        Toast toast_error = Toast.makeText(MainActivity.this,
+                                "Error getting your location please try again.",
+                                Toast.LENGTH_LONG);
+                        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+                        toast_error.show();
+
+                        mService.removeLocationUpdates();
+                        resetUI();
+                    }
+
+                    //postMapData();
                 }
             });
         }
@@ -249,7 +338,23 @@ public class MainActivity extends AppCompatActivity
                 } else {
                     //mService.requestLocationUpdates();
                     mMap.clear();
-                    postMapData();
+                    mService.requestLocationUpdates();
+                    getLastKnownOrLatestLocation();
+                    if(mLocation != null) {
+                            //mRequestDataObject = prepareOutboundData();
+                            mRequestDataObject.setLocation(new com.domain.Location(mLocation.getLatitude(),
+                                    mLocation.getLongitude()));
+                            mMapDataProcessor.sendRequest(mRequestDataObject, mContext);
+
+                            mService.initialiseDataObject(mRequestDataObject);
+
+                        /*Toast toast_error = Toast.makeText(MainActivity.this, "Updating your details...",
+                                Toast.LENGTH_LONG);
+                        toast_error.setGravity(Gravity.BOTTOM, 0, 500);
+                        toast_error.show();*/
+                            postMapData();
+
+                    }
                     //mMap.
                 }
             });
@@ -276,8 +381,6 @@ public class MainActivity extends AppCompatActivity
                     Toast.LENGTH_LONG);
             toast_error.setGravity(Gravity.BOTTOM, 0, 500);
             toast_error.show();
-
-            getLastKnownOrLatestLocation();
         }
     }
 
@@ -334,6 +437,7 @@ public class MainActivity extends AppCompatActivity
                 //if(mMap == null) {
                 //restartMapInitialise();
                 enableMyLocation();
+                //resetUI();
                 //}
                 //mService.requestLocationUpdates();
                 //setButtonsState(Utils.requestingLocationUpdates(this));
@@ -386,22 +490,6 @@ public class MainActivity extends AppCompatActivity
         mInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
 
         resetUI();
-
-        /*mRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                if (checkedId == R.id.symptoms) {
-                    mSymptom.setSelected(true);
-                    LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
-                    lInputCheckBoxPanel.setVisibility(View.VISIBLE);
-                } else if (checkedId == R.id.covid19) {
-                    mCovid19.setSelected(true);
-                    LinearLayout lInputCheckBoxPanel = (LinearLayout) findViewById(R.id.inputCheckbox);
-                    lInputCheckBoxPanel.setVisibility(View.GONE);
-                }
-                mUpdatesButton.setEnabled(true);
-            }
-        });*/
 
     }
 
@@ -506,8 +594,9 @@ public class MainActivity extends AppCompatActivity
         List<String> symtompsList = new ArrayList<>();
         List<String> diagnosesList = new ArrayList<>();
 
-        requestDataObject.setId(Utils.id(mContext));
-        requestDataObject.setLocation(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
+        requestDataObject.setId(mId);
+        requestDataObject.setLocation(new com.domain.Location(mCurrentLocation.getLatitude(),
+                mCurrentLocation.getLongitude()));
         requestDataObject.setTimestamp(System.currentTimeMillis());
 
         if (mCovid19 != null && mCovid19.isChecked()) {
@@ -544,6 +633,7 @@ public class MainActivity extends AppCompatActivity
         requestDataObject.setSymptoms(symtompsList);
         requestDataObject.setDiagnoses(diagnosesList);
 
+        Log.e(TAG, gson.toJson(requestDataObject));
         return requestDataObject;
     }
 
@@ -559,12 +649,7 @@ public class MainActivity extends AppCompatActivity
 
         enableMyLocation();
 
-        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
-            @Override
-            public void onMapLoaded() {
-                mMap.setMyLocationEnabled(true);
-            }
-        });
+        mMap.setOnMapLoadedCallback(() -> mMap.setMyLocationEnabled(true));
     }
 
     /**
@@ -572,7 +657,8 @@ public class MainActivity extends AppCompatActivity
      */
     private void enableMyLocation() {
         // [START maps_check_location_permission]
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             getLastKnownOrLatestLocation();
             //mMap.setMyLocationEnabled(true);
@@ -594,7 +680,7 @@ public class MainActivity extends AppCompatActivity
                         // Got last known location. In some rare situations this can be null.
                         if (location != null) {
                             Log.e(TAG, "Fused Location : " + location.toString());
-                            mLocation = location;
+                            mCurrentLocation = mLocation = location;
                         }
                     }
                 });
@@ -614,7 +700,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onMyLocationClick(@NonNull Location location) {
-        Toast toast_error = Toast.makeText(this, "Your current location :\n " + location.getLatitude() + ", " + location.getLongitude() + ", \nTime: " + new Date(location.getTime()), Toast.LENGTH_LONG);
+        Toast toast_error = Toast.makeText(this, "Your current location :\n "
+                + location.getLatitude() + ", " + location.getLongitude() + ", \nTime: "
+                + new Date(location.getTime()), Toast.LENGTH_LONG);
         toast_error.setGravity(Gravity.BOTTOM, 0, 500);
         toast_error.show();
 

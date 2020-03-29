@@ -11,12 +11,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "location"
+        "location",
+        "timeSpan",
+        "radius"
 })
 public class CustomLocation {
 
     @JsonProperty("location")
     private Location location;
+    @JsonProperty("timeSpan")
+    private Double timeSpan;
+    @JsonProperty("radius")
+    private Double radius;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -40,4 +46,23 @@ public class CustomLocation {
         this.additionalProperties.put(name, value);
     }
 
+    @JsonProperty("timeSpan")
+    public Double getTimeSpan() {
+        return timeSpan;
+    }
+
+    @JsonProperty("timeSpan")
+    public void setTimeSpan(Double timeSpan) {
+        this.timeSpan = timeSpan;
+    }
+
+    @JsonProperty("radius")
+    public Double getRadius() {
+        return radius;
+    }
+
+    @JsonProperty("radius")
+    public void setRadius(Double radius) {
+        this.radius = radius;
+    }
 }

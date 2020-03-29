@@ -34,6 +34,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBWeaGXhjGXKXq9vL09WVLn_7-7OTKCXvU" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
         <!--<activity android:name="com.MainActivity">-->
         <activity android:name="com.WelcomeActivity">
