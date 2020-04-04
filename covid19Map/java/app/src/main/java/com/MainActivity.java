@@ -33,6 +33,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.android.volley.BuildConfig;
 import com.domain.RequestDataObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -650,6 +651,14 @@ public class MainActivity extends AppCompatActivity
         enableMyLocation();
 
         mMap.setOnMapLoadedCallback(() -> mMap.setMyLocationEnabled(true));
+
+        if(mRequestDataObject != null && mRequestDataObject.getId() != null) {
+            mRequestDataObject.setLocation(new com.domain.Location(mLocation.getLatitude(),
+                    mLocation.getLongitude()));
+            mMapDataProcessor.sendRequest(mRequestDataObject, mContext);
+
+            mService.initialiseDataObject(mRequestDataObject);
+        }
     }
 
     /**
